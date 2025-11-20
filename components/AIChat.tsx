@@ -77,11 +77,14 @@ const AIChat: React.FC<AIChatProps> = ({
                     onDownload(gearIndex);
                     console.log(`⬇️ Downloaded ${command.gear} gear`);
                 }
-                // Handle toggle_animation action
-                else if (command.action === 'toggle_animation' && command.playing !== undefined) {
-                    setState(prev => ({ ...prev, isPlaying: command.playing }));
+                // Handle set_speed action
+                else if (command.action === 'set_speed' && command.speed !== undefined) {
+                    // Validate speed: minimum is 3
+                    const validatedSpeed = Math.max(3, command.speed);
+                    setState(prev => ({ ...prev, speed: validatedSpeed }));
+                    console.log(`⚡ Speed set to ${validatedSpeed}`);
                 }
-                // Handle update_params action
+                // Handle update_params action (only gear parameters, no speed)
                 else if (command.action === 'update_params' && command.params) {
                     setState(prev => {
                         const next = { ...prev };
@@ -89,7 +92,6 @@ const AIChat: React.FC<AIChatProps> = ({
 
                         if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
                         if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
-                        if (p.speed !== undefined) next.speed = p.speed;
 
                         // Recalculate ratio if teeth changed
                         if (p.gear1?.toothCount || p.gear2?.toothCount) {

@@ -20,7 +20,7 @@ Ich bin dein KI-Assistent für Zahnräder. Links hast du ein **blaues** Zahnrad,
 • "Gib mir die SVG vom blauen Zahnrad" → Download
 • "Mach 20 Zähne" → Parameter ändern
 • "Größeres Modul" → Easy done
-• "Start die Animation" → Let's go
+• "Mach schneller" → Speed ändern
 • Oder frag mich einfach irgendwas zu Zahnrädern
 
 Schreib einfach, was du brauchst – kein Stress, kein Gelaber. Let's build! 🔧`
@@ -33,7 +33,7 @@ const App: React.FC = () => {
     distance: 0,
     ratio: INITIAL_GEAR_2.toothCount / INITIAL_GEAR_1.toothCount,
     lockedRatio: true,
-    speed: 60,
+    speed: 10,
     isPlaying: true
   });
 

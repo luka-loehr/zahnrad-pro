@@ -18,7 +18,7 @@ const ACTION_RESPONSE_SCHEMA = {
     properties: {
       action: {
         type: Type.STRING,
-        enum: ['download_svg', 'update_params', 'toggle_animation', 'name_chat', 'respond']
+        enum: ['download_svg', 'update_params', 'set_speed', 'name_chat', 'respond']
       },
       gear: {
         type: Type.STRING,
@@ -32,8 +32,8 @@ const ACTION_RESPONSE_SCHEMA = {
         type: Type.STRING,
         nullable: true
       },
-      playing: {
-        type: Type.BOOLEAN,
+      speed: {
+        type: Type.NUMBER,
         nullable: true
       },
       params: {
@@ -58,7 +58,6 @@ const ACTION_RESPONSE_SCHEMA = {
               centerHoleDiameter: { type: Type.NUMBER, nullable: true }
             }
           },
-          speed: { type: Type.NUMBER, nullable: true }
         }
       }
     },
