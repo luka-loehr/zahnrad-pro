@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
+import { ChatMessage } from '../types';
 
 const MODEL_ID = 'gemini-2.5-flash';
 const MAX_LOG_LENGTH = 160;
@@ -9,26 +10,38 @@ const truncateForLog = (input: string) => {
   return `${input.slice(0, MAX_LOG_LENGTH)}…`;
 };
 
-export const sendMessageToGemini = async (message: string): Promise<string> => {
+export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = []): Promise<string> => {
   if (!process.env.API_KEY) {
     console.error('[Gemini] API key missing before request dispatch.');
     throw new Error("API Key not configured");
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  // Build conversation history for context
+  // Skip the first message (welcome message) and format for Gemini
+  const history = chatHistory.slice(1).map(msg => ({
+    role: msg.role === 'model' ? 'model' : 'user',
+    parts: [{ text: msg.text }]
+  }));
+
   const payload = {
     model: MODEL_ID,
-    contents: message,
+    contents: [
+      ...history,
+      { role: 'user' as const, parts: [{ text: message }] }
+    ],
     config: {
       systemInstruction: SYSTEM_PROMPT,
     }
-  } as const;
+  };
 
   console.debug('[Gemini] Dispatching generateContent request', {
     model: MODEL_ID,
     hasApiKey: true,
     promptPreview: truncateForLog(message),
-    promptLength: message.length
+    promptLength: message.length,
+    historyLength: history.length
   });
 
   const requestStartedAt = Date.now();

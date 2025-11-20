@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GearSystemState, ChatMessage } from '../types';
 import { MessageSquare, Send, AlertCircle } from 'lucide-react';
 import { sendMessageToGemini } from '../services/geminiService';
+import { MarkdownText } from './MarkdownText';
 
 interface AIChatProps {
     state: GearSystemState;
@@ -9,14 +10,13 @@ interface AIChatProps {
     onDownload: (gearIndex: 1 | 2) => void;
 }
 
-const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
-    const [chatInput, setChatInput] = useState('');
-    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-        {
-            role: 'model',
-            text: `Willkommen bei GearGen Pro! 🔧
+const CHAT_HISTORY_KEY = 'geargen-chat-history';
 
-Ich bin Ihr KI-Assistent für Zahnraddesign.
+const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
+    role: 'model',
+    text: `Willkommen bei GearGen Pro! 🔧
+
+Ich bin dein KI-Assistent für Zahnraddesign.
 
 **Verfügbare Befehle:**
 • "Gib mir die SVG-Datei für das blaue Zahnrad"
@@ -25,9 +25,26 @@ Ich bin Ihr KI-Assistent für Zahnraddesign.
 • "Mach das Modul 3mm"
 • "Starte die Animation"
 • "Stoppe die Simulation"
-• Oder stellen Sie Fragen zur Zahnradmechanik!`
+• Oder stell mir Fragen zur Zahnradmechanik!`
+};
+
+const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
+    const [chatInput, setChatInput] = useState('');
+
+    // Load chat history from localStorage or use default
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
+        try {
+            const saved = localStorage.getItem(CHAT_HISTORY_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return parsed.length > 0 ? parsed : [DEFAULT_WELCOME_MESSAGE];
+            }
+        } catch (e) {
+            console.error('Failed to load chat history:', e);
         }
-    ]);
+        return [DEFAULT_WELCOME_MESSAGE];
+    });
+
     const [isAiLoading, setIsAiLoading] = useState(false);
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -41,7 +58,7 @@ Ich bin Ihr KI-Assistent für Zahnraddesign.
         setIsAiLoading(true);
 
         try {
-            const responseText = await sendMessageToGemini(userMsg);
+            const responseText = await sendMessageToGemini(userMsg, chatHistory);
             console.log("🤖 AI Raw Response:", responseText);
 
             // Try to find JSON in the response
@@ -110,8 +127,17 @@ Ich bin Ihr KI-Assistent für Zahnraddesign.
         }
     };
 
+    // Save chat history to localStorage whenever it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
+        } catch (e) {
+            console.error('Failed to save chat history:', e);
+        }
+    }, [chatHistory]);
+
     // Auto-scroll to bottom when chat history updates
-    React.useEffect(() => {
+    useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
@@ -135,13 +161,13 @@ Ich bin Ihr KI-Assistent für Zahnraddesign.
             >
                 {chatHistory.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-lg p-3 text-sm whitespace-pre-line ${msg.role === 'user'
+                        <div className={`max-w-[85%] rounded-lg p-3 text-sm ${msg.role === 'user'
                             ? 'bg-brand-600 text-white'
                             : msg.isError
                                 ? 'bg-red-900/50 border border-red-700 text-red-200'
                                 : 'bg-slate-700 text-slate-200'
                             }`}>
-                            {msg.text}
+                            <MarkdownText text={msg.text} />
                         </div>
                     </div>
                 ))}
