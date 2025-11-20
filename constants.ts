@@ -1,4 +1,4 @@
-export const DEFAULT_MODULE = 5;
+export const DEFAULT_MODULE = 2;
 export const DEFAULT_PRESSURE_ANGLE = 20;
 
 // Hardcoded colors - blue (left), red (right)
@@ -9,24 +9,20 @@ export const INITIAL_GEAR_1 = {
   toothCount: 12,
   module: DEFAULT_MODULE,
   pressureAngle: DEFAULT_PRESSURE_ANGLE,
-  centerHoleDiameter: 10, // mm
+  centerHoleDiameter: 5, // mm - smaller hole for smaller gears
   profileShift: 0,
   color: GEAR_COLOR_BLUE,
   role: 'antrieb' as const,
-  outerDiameterCm: 4.5,
-  radiusCm: 2.25 // Automatisch: outerDiameterCm / 2
 };
 
 export const INITIAL_GEAR_2 = {
   toothCount: 24,
   module: DEFAULT_MODULE,
   pressureAngle: DEFAULT_PRESSURE_ANGLE,
-  centerHoleDiameter: 10, // mm
+  centerHoleDiameter: 5, // mm - smaller hole for smaller gears
   profileShift: 0,
   color: GEAR_COLOR_RED,
   role: 'abtrieb' as const,
-  outerDiameterCm: 4.5,
-  radiusCm: 2.25 // Automatisch: outerDiameterCm / 2
 };
 
 export const SYSTEM_PROMPT = `Okay, hör zu:
@@ -56,30 +52,33 @@ Die aktuellen Parameter werden dir automatisch in diesem Prompt mitgegeben. Du k
 }
 WICHTIG: Bei "both" werden beide Zahnräder zusammen in einer SVG-Datei exportiert, korrekt positioniert wie im Renderer, so dass sie perfekt ineinander greifen.
 
-2. **Parameter ändern** – Bei "Mach mal 20 Zähne", "Bohrung 5mm" oder "Modul größer":
+2. **Parameter ändern** – Bei "Mach mal 20 Zähne", "Bohrung 5mm", "Zähne kleiner/größer" oder "Modul ändern":
 {
   "action": "update_params",
   "params": {
     "gear1": { 
       "toothCount": number, 
-      "module": number, 
-      "centerHoleDiameter": number (in mm, Standard: 10mm),
+      "module": number (Zahngröße in mm - kleinerer Wert = kleinere Zähne!), 
+      "centerHoleDiameter": number (Bohrung in mm, Standard: 5mm),
       "role": "antrieb" oder "abtrieb"
     },
     "gear2": { 
       "toothCount": number, 
-      "module": number, 
-      "centerHoleDiameter": number (in mm, Standard: 10mm),
+      "module": number (Zahngröße in mm - kleinerer Wert = kleinere Zähne!), 
+      "centerHoleDiameter": number (Bohrung in mm, Standard: 5mm),
       "role": "antrieb" oder "abtrieb"
     }
   },
   "message": "Easy, hab [was du geändert hast]. Check's aus!"
 }
 WICHTIG: 
+- **TERMINOLOGY:** "module" = Zahngröße (tooth SIZE in mm), "toothCount" = Zähnezahl (number of teeth)
+- **"Zähne kleiner/größer"** = User will KLEINERES/GRÖSSERES **module** (z.B. 2mm → 1mm für kleinere Zähne)
+- **"Mehr/weniger Zähne"** = User will andere **toothCount** (z.B. 12 → 24 für mehr Zähne)
 - Nur die Felder angeben, die sich ändern. "gear1" = BLAUES Zahnrad (links, Standard: antrieb), "gear2" = ROTES Zahnrad (rechts, Standard: abtrieb).
-- **Durchmesser wird automatisch berechnet** aus Modul × Zähnezahl + 2 × Addendum. Der User kann den Durchmesser NICHT direkt setzen!
-- Wenn User nach "Durchmesser X" fragt: Erkläre, dass der Durchmesser automatisch aus Modul und Zähnen berechnet wird, und schlage vor, Modul ODER Zähnezahl anzupassen.
-- centerHoleDiameter (Bohrung) kann beliebige Werte haben (Standard: 10mm falls nicht gesetzt).
+- **Durchmesser wird automatisch berechnet** aus module × toothCount + 2 × Addendum. Der User kann den Durchmesser NICHT direkt setzen!
+- Wenn User nach "Durchmesser X" fragt: Erkläre, dass der Durchmesser automatisch aus module und toothCount berechnet wird, und schlage vor, module ODER toothCount anzupassen.
+- centerHoleDiameter (Bohrung) kann beliebige Werte haben (Standard: 5mm falls nicht gesetzt).
 - Übersetzungsverhältnis automatisch berechnen: ratio = teethCount_right / teethCount_left.
 - Wenn User ein Verhältnis angibt (z.B. "1:2"), passende Zähnezahlen generieren.
 

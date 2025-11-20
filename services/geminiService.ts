@@ -99,7 +99,7 @@ const getStatusString = (state: GearSystemState): string => {
 
 **WICHTIGE REGELN:**
 - Durchmesser wird automatisch berechnet: Ø = Modul × Zähne + 2 × Addendum
-- centerHoleDiameter Standard: 10mm (falls nicht gesetzt)
+- centerHoleDiameter Standard: 5mm (falls nicht gesetzt)
 - Übersetzungsverhältnis: ratio = teethCount_right / teethCount_left`;
 };
 

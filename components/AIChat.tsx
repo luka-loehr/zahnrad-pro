@@ -107,7 +107,7 @@ const AIChat: React.FC<AIChatProps> = ({
 
                             // Default centerHoleDiameter if not set
                             if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
-                                updated.centerHoleDiameter = 10; // mm
+                                updated.centerHoleDiameter = 5; // mm - smaller default for laser cutting
                             }
 
                             return updated;

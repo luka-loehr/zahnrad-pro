@@ -330,7 +330,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           <div className="text-xs text-slate-300 font-mono space-y-1">
             <div className="flex justify-between"><span>Ratio:</span> <span className="text-white font-bold">{state.ratio.toFixed(2)}</span></div>
             <div className="flex justify-between"><span>Abstand:</span> <span className="text-white">{centerDist.toFixed(2)}mm</span></div>
-            <div className="flex justify-between"><span>Modul:</span> <span className="text-white">{state.gear1.module}</span></div>
+            <div className="flex justify-between"><span>Zahngröße:</span> <span className="text-white">{state.gear1.module}mm</span></div>
           </div>
         </div>
 

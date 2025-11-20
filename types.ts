@@ -5,10 +5,7 @@ export interface GearParams {
   centerHoleDiameter: number; // in mm
   profileShift: number;
   color: string;
-  // Neue Parameter
   role: 'antrieb' | 'abtrieb'; // Antrieb oder Abtrieb
-  outerDiameterCm: number; // Äußerer Durchmesser in cm
-  radiusCm: number; // Radius in cm (automatisch: outerDiameterCm / 2)
 }
 
 export interface GearSystemState {
