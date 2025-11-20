@@ -144,7 +144,7 @@ const AIChat: React.FC<AIChatProps> = ({
         } catch (error) {
             console.error("🔥 AI Service Error:", error);
             setStreamingMessage('');
-            onSendMessage('Fehler: Verbindung zur KI nicht möglich. Prüfen Sie den API-Schlüssel.', 'model', true);
+            onSendMessage('Es gab ein Problem, bitte warte einen Moment und versuche es dann noch einmal.', 'model', true);
         } finally {
             setIsAiLoading(false);
         }
@@ -253,7 +253,7 @@ const AIChat: React.FC<AIChatProps> = ({
                     ) : (
                         <div className="flex items-center gap-2 text-yellow-500 text-xs p-2 bg-yellow-900/20 border border-yellow-900 rounded">
                             <AlertCircle className="w-4 h-4" />
-                            <span>API-Schlüssel fehlt in der Umgebungsvariable. Assistent deaktiviert.</span>
+                            <span>API KEY MISSING</span>
                         </div>
                     )}
                 </div>
