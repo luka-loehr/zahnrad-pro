@@ -247,7 +247,7 @@ const AIChat: React.FC<AIChatProps> = ({
                                 </button>
                             </form>
                             <p className="text-xs text-slate-500 mt-2 text-center">
-                                ZahnradPro kann Fehler machen. Überprüfe wichtige Informationen.
+                                Niemals persönliche Daten teilen.
                             </p>
                         </>
                     ) : (
