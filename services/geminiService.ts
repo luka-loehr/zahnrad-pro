@@ -65,19 +65,10 @@ const ACTION_RESPONSE_SCHEMA = {
   }
 };
 
-// Generate compact status string for current state
-const getStatusString = (state: GearSystemState): string => {
-  return `**AKTUELLE WERTE:**
-Blau: ${state.gear1.toothCount} Zähne, ${state.gear1.module}mm Modul, ${state.gear1.centerHoleDiameter}mm Bohrung
-Rot: ${state.gear2.toothCount} Zähne, ${state.gear2.module}mm Modul, ${state.gear2.centerHoleDiameter}mm Bohrung
-Übersetzung: ${state.ratio.toFixed(2)}, Geschwindigkeit: ${state.speed} U/min`;
-};
-
 // Streaming version - yields text chunks as they arrive
 export async function* streamMessageToGemini(
   message: string,
-  chatHistory: ChatMessage[] = [],
-  currentState?: GearSystemState
+  chatHistory: ChatMessage[] = []
 ): AsyncGenerator<string, void, unknown> {
   if (!process.env.API_KEY) {
     console.error('[Gemini] API key missing before request dispatch.');
@@ -93,10 +84,7 @@ export async function* streamMessageToGemini(
     parts: [{ text: msg.text }]
   }));
 
-  // Always add current state if provided (compact status as footer)
-  const systemPrompt = currentState
-    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
-    : SYSTEM_PROMPT;
+  const systemPrompt = SYSTEM_PROMPT;
 
   const payload = {
     model: MODEL_ID,
@@ -154,7 +142,7 @@ export async function* streamMessageToGemini(
 }
 
 // Non-streaming version (kept for backwards compatibility)
-export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = [], currentState?: GearSystemState): Promise<string> => {
+export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = []): Promise<string> => {
   if (!process.env.API_KEY) {
     console.error('[Gemini] API key missing before request dispatch.');
     throw new Error("API Key not configured");
@@ -169,10 +157,7 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
     parts: [{ text: msg.text }]
   }));
 
-  // Always add current state if provided (compact status as footer)
-  const systemPrompt = currentState
-    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
-    : SYSTEM_PROMPT;
+  const systemPrompt = SYSTEM_PROMPT;
 
   const payload = {
     model: MODEL_ID,

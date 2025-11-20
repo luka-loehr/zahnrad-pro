@@ -51,9 +51,7 @@ const AIChat: React.FC<AIChatProps> = ({
             let fullResponse = '';
 
             // Stream the response (now guaranteed to be valid JSON)
-            // Pass state only on first user message (when only welcome message exists)
-            const isFirstUserMessage = messages.length === 1;
-            for await (const chunk of streamMessageToGemini(userMsg, messages, isFirstUserMessage ? state : undefined)) {
+            for await (const chunk of streamMessageToGemini(userMsg, messages)) {
                 fullResponse += chunk;
                 setStreamingMessage(fullResponse);
             }
