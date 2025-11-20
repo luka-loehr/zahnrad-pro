@@ -16,6 +16,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
         { role: 'model', text: 'Hallo! Ich kann Ihnen bei Übersetzungsverhältnissen, Materialauswahl oder der Erklärung der Evolventengeometrie helfen.' }
     ]);
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
     const updateGear = (gearIdx: 1 | 2, field: keyof GearParams, value: any) => {
         setState(prev => {
@@ -130,8 +131,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
         }
     };
 
+    // Auto-scroll to bottom when chat history updates
+    React.useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [chatHistory, isAiLoading]);
+
     return (
-        <div className="w-full md:w-96 bg-slate-800 border-r border-slate-700 flex flex-col h-full overflow-hidden shadow-xl z-10">
+        <div className="w-full md:w-96 md:max-h-screen bg-slate-800 md:border-r border-slate-700 flex flex-col shadow-xl z-10">
             <div className="p-4 border-b border-slate-700 flex items-center justify-between bg-slate-900">
                 <h1 className="font-bold text-xl text-white flex items-center gap-2">
                     <Settings2 className="w-5 h-5 text-brand-500" />
@@ -303,8 +311,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
 
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 flex flex-col min-h-0 md:max-h-[calc(100vh-4rem)]">
+                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {chatHistory.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] rounded-lg p-3 text-sm ${msg.role === 'user'

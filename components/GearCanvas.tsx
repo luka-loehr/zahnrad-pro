@@ -18,6 +18,8 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
   const [isDragging, setIsDragging] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastTouchDistance = useRef<number | null>(null);
+  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null);
 
   // References to SVG groups to manipulate transform directly for performance
   const g1Ref = useRef<SVGGElement>(null);
@@ -200,6 +202,96 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
     setIsDragging(false);
   };
 
+  // Touch event handlers for mobile/tablet
+  const getTouchDistance = (touch1: React.Touch, touch2: React.Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchCenter = (touch1: React.Touch, touch2: React.Touch) => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      // Single touch - pan
+      setIsDragging(true);
+      lastMousePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      // Two fingers - zoom
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      lastTouchDistance.current = distance;
+      lastTouchCenter.current = center;
+      setIsDragging(false);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging) {
+      // Single touch pan
+      const dx = e.touches[0].clientX - lastMousePos.current.x;
+      const dy = e.touches[0].clientY - lastMousePos.current.y;
+
+      const containerWidth = containerRef.current?.clientWidth || 1;
+      const svgUnitsPerPixel = viewBoxSize / containerWidth;
+
+      setTransform(prev => ({
+        ...prev,
+        x: prev.x + (dx * svgUnitsPerPixel) / prev.scale,
+        y: prev.y + (dy * svgUnitsPerPixel) / prev.scale
+      }));
+
+      lastMousePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2 && lastTouchDistance.current && lastTouchCenter.current) {
+      // Pinch zoom
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+
+      const dxPixels = center.x - rect.left - cx;
+      const dyPixels = center.y - rect.top - cy;
+
+      const svgUnitsPerPixel = viewBoxSize / Math.min(rect.width, rect.height);
+      const centerX_SVG = dxPixels * svgUnitsPerPixel;
+      const centerY_SVG = dyPixels * svgUnitsPerPixel;
+
+      const scaleFactor = distance / lastTouchDistance.current;
+
+      setTransform(prev => {
+        const newScale = Math.max(0.1, Math.min(50, prev.scale * scaleFactor));
+        const newX = prev.x + centerX_SVG * (1 / newScale - 1 / prev.scale);
+        const newY = prev.y + centerY_SVG * (1 / newScale - 1 / prev.scale);
+
+        return { x: newX, y: newY, scale: newScale };
+      });
+
+      lastTouchDistance.current = distance;
+      lastTouchCenter.current = center;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      lastTouchDistance.current = null;
+      lastTouchCenter.current = null;
+    }
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+    }
+  };
+
   const handleReset = () => {
     const initialScale = viewBoxSize / maxDiameter;
     setTransform({ x: 0, y: 0, scale: initialScale });
@@ -207,13 +299,17 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   return (
     <div
-      className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex items-center justify-center cursor-move"
+      className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex items-center justify-center cursor-move touch-none min-h-[400px] md:min-h-screen"
       id={id}
       ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ touchAction: 'none' }}
     >
 
       {/* Grid / Background visual aids */}
@@ -263,20 +359,20 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
       </svg>
 
       {/* Controls Overlay */}
-      <div className="absolute bottom-4 right-4 flex flex-col gap-2 items-end pointer-events-none">
+      <div className="absolute bottom-4 left-4 md:right-4 md:left-auto flex flex-col gap-2 items-start md:items-end pointer-events-none">
         <div className="flex gap-2 pointer-events-auto">
-          <button onClick={() => setTransform(t => ({ ...t, scale: t.scale * 1.2 }))} className="bg-slate-800/80 p-2 rounded text-white hover:bg-slate-700 transition-colors" title="Zoom In">
-            <ZoomIn className="w-5 h-5" />
+          <button onClick={() => setTransform(t => ({ ...t, scale: t.scale * 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom In">
+            <ZoomIn className="w-6 h-6 md:w-5 md:h-5" />
           </button>
-          <button onClick={() => setTransform(t => ({ ...t, scale: t.scale / 1.2 }))} className="bg-slate-800/80 p-2 rounded text-white hover:bg-slate-700 transition-colors" title="Zoom Out">
-            <ZoomOut className="w-5 h-5" />
+          <button onClick={() => setTransform(t => ({ ...t, scale: t.scale / 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom Out">
+            <ZoomOut className="w-6 h-6 md:w-5 md:h-5" />
           </button>
-          <button onClick={handleReset} className="bg-slate-800/80 p-2 rounded text-white hover:bg-slate-700 transition-colors" title="Reset View">
-            <RotateCcw className="w-5 h-5" />
+          <button onClick={handleReset} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Reset View">
+            <RotateCcw className="w-6 h-6 md:w-5 md:h-5" />
           </button>
         </div>
-        <div className="text-xs text-slate-500 bg-slate-900/80 p-2 rounded">
-          Echtzeit-Rendering | SVG | Zoom: {(transform.scale * 100).toFixed(0)}%
+        <div className="text-xs text-slate-400 bg-slate-900/90 px-3 py-2 md:px-2 md:py-1.5 rounded-lg shadow-lg">
+          Zoom: {(transform.scale * 100).toFixed(0)}%
         </div>
       </div>
     </div>
