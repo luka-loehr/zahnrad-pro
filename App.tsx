@@ -231,28 +231,29 @@ const App: React.FC = () => {
     const pitchDiameter2 = state.gear2.module * state.gear2.toothCount;
     const diameter2Mm = pitchDiameter2 + (2 * addendum2);
 
-    // Calculate center distance (from gear math, based on pitch diameters)
-    const centerDistMm = calculateCenterDistance(state.gear1, state.gear2);
+    // For laser cutting: separate gears with a gap instead of meshing them
+    const gapBetweenGears = 10; // mm gap for laser cutting
+    const separationDistance = diameter1Mm / 2 + diameter2Mm / 2 + gapBetweenGears;
 
     // Calculate viewBox to fit both gears with padding
     const maxRadius = Math.max(diameter1Mm / 2, diameter2Mm / 2);
-    const totalWidth = centerDistMm + maxRadius * 2;
-    const padding = maxRadius * 0.5;
+    const totalWidth = diameter1Mm + diameter2Mm + gapBetweenGears;
+    const padding = 10; // mm padding around edges
     const viewBoxWidth = totalWidth + padding * 2;
     const viewBoxHeight = maxRadius * 2 + padding * 2;
 
-    // Position gear1 at center-left and gear2 at center-right
+    // Position gear1 at left and gear2 at right with gap between
     const gear1X = padding + diameter1Mm / 2;
     const gear1Y = viewBoxHeight / 2;
-    const gear2X = gear1X + centerDistMm;
+    const gear2X = gear1X + separationDistance;
     const gear2Y = viewBoxHeight / 2;
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" width="${viewBoxWidth}mm" height="${viewBoxHeight}mm">
-  <!-- GearGen Pro Export - Both Gears -->
+  <!-- GearGen Pro Export - Both Gears (Separated for Laser Cutting) -->
   <!-- Blue Gear (Gear 1): ${(diameter1Mm / 10).toFixed(2)}cm, ${state.gear1.toothCount} teeth, ${state.gear1.role} -->
   <!-- Red Gear (Gear 2): ${(diameter2Mm / 10).toFixed(2)}cm, ${state.gear2.toothCount} teeth, ${state.gear2.role} -->
-  <!-- Center Distance: ${centerDistMm.toFixed(2)}mm -->
+  <!-- Gap Between Gears: ${gapBetweenGears}mm (for laser cutting) -->
   <!-- Ratio: ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount}) -->
   <!-- Module: ${state.gear1.module}mm, Pressure Angle: ${state.gear1.pressureAngle}° -->
   
