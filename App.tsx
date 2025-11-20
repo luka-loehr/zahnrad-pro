@@ -12,19 +12,21 @@ const MAX_CHATS = 50;
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   role: 'model',
-  text: `Hey! 👋 Ich bin **ZahnradPro** – dein KI-Assistent für Zahnräder.
+  text: `Hey! 👋 Ich bin ZahnradPro, gebaut von Luka.
 
-**Was kann ich für dich tun?**
+Sag mir einfach:
 
-📥 **SVG-Dateien herunterladen** – Sag einfach "Gib mir die SVG" oder "Download beide Zahnräder"
+wie viele Zähne ein Zahnrad haben soll,
 
-⚙️ **Übersetzung anpassen** – "Mach ein 1:3 Verhältnis" oder "24 Zähne für das rote Zahnrad"
+welches Übersetzungsverhältnis du brauchst,
 
-🔧 **Parameter ändern** – "Kleinere Zähne", "Bohrung 3mm", "Schneller drehen"
+welche Bohrung du willst,
 
-📐 **Berechnungen & Formeln** – Frag mich zu Modul, Teilkreisdurchmesser, Achsabstand oder was auch immer
+oder frag mich irgendwas – ich erklär dir alles zu Zahnrädern und Formeln.
 
-Leg einfach los! 🚀`
+Und wenn alles passt: „Gib mir die SVG-Datei."
+
+Leg los! 🚀`
 };
 
 const App: React.FC = () => {
