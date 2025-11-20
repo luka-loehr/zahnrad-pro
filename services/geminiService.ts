@@ -70,9 +70,9 @@ const getStatusString = (state: GearSystemState): string => {
   return `**AKTUELLE PARAMETER - DU HAST IMMER ZUGRIFF AUF ALLE WERTE:**
 
 **GLOBALE PARAMETER:**
-- **Animation Speed:** ${state.speed} RPM
-- **Renderer Scale:** ${state.rendererScale} (1 Kachel = ${state.rendererScale} ${state.unit})
-- **SVG Scale:** ${state.svgScale}
+- **Animationsgeschwindigkeit:** ${state.speed} U/min
+- **Renderer-Skalierung:** ${state.rendererScale} (1 Kachel = ${state.rendererScale} ${state.unit})
+- **SVG-Skalierung:** ${state.svgScale}
 - **Maßeinheit:** ${state.unit}
 
 **BLAUES ZAHNRAD (links, gear1):**
@@ -92,13 +92,13 @@ const getStatusString = (state: GearSystemState): string => {
 - **Farbe:** Rot
 
 **ÜBERSETZUNGSVERHÄLTNIS:**
-- **Ratio:** ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount})
+- **Übersetzungsverhältnis:** ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount})
 - **Achsabstand:** ${state.distance.toFixed(2)} mm
 
 **WICHTIGE REGELN:**
 - Durchmesser wird automatisch berechnet: Ø = Modul × Zähne + 2 × Addendum
-- centerHoleDiameter Standard: 5mm (falls nicht gesetzt)
-- Übersetzungsverhältnis: ratio = teethCount_right / teethCount_left`;
+- Bohrungsdurchmesser Standard: 5mm (falls nicht gesetzt)
+- Übersetzungsverhältnis: Zähnezahl_rechts ÷ Zähnezahl_links`;
 };
 
 // Streaming version - yields text chunks as they arrive
