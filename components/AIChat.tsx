@@ -8,6 +8,7 @@ interface AIChatProps {
     state: GearSystemState;
     setState: React.Dispatch<React.SetStateAction<GearSystemState>>;
     onDownload: (gearIndex: 1 | 2) => void;
+    onDownloadBoth: () => void;
     messages: ChatMessage[];
     chatName: string;
     onSendMessage: (message: string, role?: 'user' | 'model', isError?: boolean) => void;
@@ -19,6 +20,7 @@ const AIChat: React.FC<AIChatProps> = ({
     state,
     setState,
     onDownload,
+    onDownloadBoth,
     messages,
     chatName,
     onSendMessage,
@@ -75,9 +77,14 @@ const AIChat: React.FC<AIChatProps> = ({
                 }
                 // Handle download_svg action
                 else if (command.action === 'download_svg' && command.gear) {
-                    const gearIndex = command.gear === 'blue' ? 1 : 2;
-                    onDownload(gearIndex);
-                    console.log(`⬇️ Downloaded ${command.gear} gear`);
+                    if (command.gear === 'both') {
+                        onDownloadBoth();
+                        console.log('⬇️ Downloaded both gears together');
+                    } else {
+                        const gearIndex = command.gear === 'blue' ? 1 : 2;
+                        onDownload(gearIndex);
+                        console.log(`⬇️ Downloaded ${command.gear} gear`);
+                    }
                 }
                 // Handle set_speed action
                 else if (command.action === 'set_speed' && command.speed !== undefined) {

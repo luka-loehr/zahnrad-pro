@@ -22,7 +22,7 @@ const ACTION_RESPONSE_SCHEMA = {
       },
       gear: {
         type: Type.STRING,
-        enum: ['blue', 'red'],
+        enum: ['blue', 'red', 'both'],
         nullable: true
       },
       message: {

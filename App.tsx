@@ -4,7 +4,7 @@ import ChatSidebar from './components/ChatSidebar';
 import GearCanvas from './components/GearCanvas';
 import { GearSystemState, ChatSession, ChatList, ChatMessage } from './types';
 import { INITIAL_GEAR_1, INITIAL_GEAR_2 } from './constants';
-import { generateGearPath, downloadSVG } from './utils/gearMath';
+import { generateGearPath, downloadSVG, calculateCenterDistance } from './utils/gearMath';
 
 const CHAT_SESSIONS_KEY = 'geargen-chat-sessions';
 const OLD_CHAT_HISTORY_KEY = 'geargen-chat-history';
@@ -228,6 +228,62 @@ const App: React.FC = () => {
     downloadSVG(svgContent, `${gearName}.svg`);
   };
 
+  const handleDownloadBoth = () => {
+    const gear1Path = generateGearPath(state.gear1);
+    const gear2Path = generateGearPath(state.gear2);
+
+    // Calculate geometric dimensions for both gears
+    const addendum1 = state.gear1.module * (1 + state.gear1.profileShift);
+    const pitchDiameter1 = state.gear1.module * state.gear1.toothCount;
+    const geometricDiameter1 = pitchDiameter1 + (2 * addendum1);
+
+    const addendum2 = state.gear2.module * (1 + state.gear2.profileShift);
+    const pitchDiameter2 = state.gear2.module * state.gear2.toothCount;
+    const geometricDiameter2 = pitchDiameter2 + (2 * addendum2);
+
+    // User-specified diameters
+    const userDiameter1Mm = state.gear1.outerDiameterCm * 10;
+    const userDiameter2Mm = state.gear2.outerDiameterCm * 10;
+
+    // Scale factors for each gear
+    const scale1 = (userDiameter1Mm / 2) / (geometricDiameter1 / 2);
+    const scale2 = (userDiameter2Mm / 2) / (geometricDiameter2 / 2);
+
+    // Calculate center distance (from gear math, based on pitch diameters)
+    const centerDistMm = calculateCenterDistance(state.gear1, state.gear2);
+
+    // Calculate viewBox to fit both gears with padding
+    const maxRadius = Math.max(userDiameter1Mm / 2, userDiameter2Mm / 2);
+    const totalWidth = centerDistMm + maxRadius * 2;
+    const padding = maxRadius * 0.5;
+    const viewBoxWidth = totalWidth + padding * 2;
+    const viewBoxHeight = maxRadius * 2 + padding * 2;
+
+    // Position gear1 at center-left and gear2 at center-right
+    const gear1X = padding + userDiameter1Mm / 2;
+    const gear1Y = viewBoxHeight / 2;
+    const gear2X = gear1X + centerDistMm;
+    const gear2Y = viewBoxHeight / 2;
+
+    const svgContent = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" width="${viewBoxWidth}mm" height="${viewBoxHeight}mm">
+  <!-- GearGen Pro Export - Both Gears -->
+  <!-- Blue Gear (Gear 1): ${state.gear1.outerDiameterCm}cm, ${state.gear1.toothCount} teeth, ${state.gear1.role} -->
+  <!-- Red Gear (Gear 2): ${state.gear2.outerDiameterCm}cm, ${state.gear2.toothCount} teeth, ${state.gear2.role} -->
+  <!-- Center Distance: ${centerDistMm.toFixed(2)}mm -->
+  <!-- Ratio: ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount}) -->
+  <!-- Module: ${state.gear1.module}mm, Pressure Angle: ${state.gear1.pressureAngle}° -->
+  
+  <!-- Gear 1 (Blue, Left) -->
+  <path d="${gear1Path}" fill="none" stroke="blue" stroke-width="0.5" transform="translate(${gear1X}, ${gear1Y}) scale(${scale1})"/>
+  
+  <!-- Gear 2 (Red, Right) -->
+  <path d="${gear2Path}" fill="none" stroke="red" stroke-width="0.5" transform="translate(${gear2X}, ${gear2Y}) scale(${scale2})"/>
+</svg>`.trim();
+
+    downloadSVG(svgContent, 'Zahnrad_System_Beide.svg');
+  };
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen w-full bg-slate-900 text-slate-100">
       <ChatSidebar
@@ -243,6 +299,7 @@ const App: React.FC = () => {
         state={state}
         setState={setState}
         onDownload={handleDownload}
+        onDownloadBoth={handleDownloadBoth}
         messages={currentChat.messages}
         chatName={currentChat.name}
         onSendMessage={handleSendMessage}
