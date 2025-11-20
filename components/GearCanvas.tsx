@@ -296,7 +296,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   return (
     <div
-      className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex flex-col items-center justify-center cursor-move touch-none min-h-[400px] md:min-h-screen"
+      className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex flex-col items-center justify-center cursor-move touch-none h-full"
       id={id}
       ref={containerRef}
       onMouseDown={handleMouseDown}

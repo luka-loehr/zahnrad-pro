@@ -268,7 +268,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen w-full bg-slate-900 text-slate-100">
+    <div className="flex flex-col md:flex-row h-screen w-full bg-slate-900 text-slate-100 overflow-hidden">
       <ChatSidebar
         open={sidebarOpen}
         chats={chatList.chats}
