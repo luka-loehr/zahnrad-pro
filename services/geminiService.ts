@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
 import { ChatMessage, GearSystemState } from '../types';
 
-const MODEL_ID = 'gemini-2.5-flash';
+const MODEL_ID = 'gemini-2.5-flash-lite';
 const MAX_LOG_LENGTH = 160;
 
 const truncateForLog = (input: string) => {

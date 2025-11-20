@@ -9,9 +9,9 @@ export default defineConfig(({ mode }) => {
   const resolvedApiKey = fileApiKey || runtimeApiKey || '';
 
   if (!resolvedApiKey) {
-    console.warn('[GearGen Pro] No Gemini API key found in .env files or process env.');
+    console.warn('[Zahnrad Pro] No Gemini API key found in .env files or process env.');
   } else if (!fileApiKey && runtimeApiKey) {
-    console.info('[GearGen Pro] Using Gemini API key from process.env (not .env files).');
+    console.info('[Zahnrad Pro] Using Gemini API key from process.env (not .env files).');
   }
 
   return {

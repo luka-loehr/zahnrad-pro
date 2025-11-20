@@ -6,13 +6,13 @@ import { GearSystemState, ChatSession, ChatList, ChatMessage } from './types';
 import { INITIAL_GEAR_1, INITIAL_GEAR_2 } from './constants';
 import { generateGearPath, downloadSVG, calculateCenterDistance } from './utils/gearMath';
 
-const CHAT_SESSIONS_KEY = 'geargen-chat-sessions';
-const OLD_CHAT_HISTORY_KEY = 'geargen-chat-history';
+const CHAT_SESSIONS_KEY = 'zahnrad-pro-chat-sessions';
+const OLD_CHAT_HISTORY_KEY = 'zahnrad-pro-chat-history';
 const MAX_CHATS = 50;
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   role: 'model',
-  text: `Hey! 👋 Ich bin ZahnradPro, gebaut von Luka.
+  text: `Hey! 👋 Ich bin Zahnrad Pro, gebaut von Luka.
 
 Sag mir einfach:
 • wie viele Zähne ein Zahnrad haben soll
@@ -205,7 +205,7 @@ const App: React.FC = () => {
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}mm" height="${size}mm">
-  <!-- ZahnradPro Export -->
+  <!-- Zahnrad Pro Export -->
   <!-- Outer Diameter: ${outerDiameterMm.toFixed(2)}mm (${(outerDiameterMm / 10).toFixed(2)}cm) -->
   <!-- Role: ${gear.role}, Module: ${gear.module}mm, Teeth: ${gear.toothCount} -->
   <!-- Pressure Angle: ${gear.pressureAngle}°, Center Hole: ${gear.centerHoleDiameter}mm -->
@@ -249,7 +249,7 @@ const App: React.FC = () => {
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" width="${viewBoxWidth}mm" height="${viewBoxHeight}mm">
-  <!-- ZahnradPro Export - Both Gears (Separated for Laser Cutting) -->
+  <!-- Zahnrad Pro Export - Both Gears (Separated for Laser Cutting) -->
   <!-- Blue Gear (Gear 1): ${(diameter1Mm / 10).toFixed(2)}cm, ${state.gear1.toothCount} teeth, ${state.gear1.role} -->
   <!-- Red Gear (Gear 2): ${(diameter2Mm / 10).toFixed(2)}cm, ${state.gear2.toothCount} teeth, ${state.gear2.role} -->
   <!-- Gap Between Gears: ${gapBetweenGears}mm (for laser cutting) -->

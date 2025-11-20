@@ -14,7 +14,7 @@ app.use(express.json());
 
 // API routes can be added here
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'GearGen Pro Server Running' });
+  res.json({ status: 'ok', message: 'Zahnrad Pro Server Running' });
 });
 
 async function startServer() {
@@ -27,7 +27,7 @@ async function startServer() {
     
     app.use(vite.middlewares);
     
-    console.log(`[DEV] GearGen Pro running on http://localhost:${PORT}`);
+    console.log(`[DEV] Zahnrad Pro running on http://localhost:${PORT}`);
   } else {
     // Production: Serve built files
     const distPath = path.join(__dirname, 'dist');
@@ -37,7 +37,7 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
     
-    console.log(`[PROD] GearGen Pro running on http://localhost:${PORT}`);
+    console.log(`[PROD] Zahnrad Pro running on http://localhost:${PORT}`);
   }
   
   app.listen(PORT, () => {
