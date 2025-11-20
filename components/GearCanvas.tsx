@@ -110,17 +110,51 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const scaleFactor = 1.1;
-      // Check for pinch gesture (ctrlKey) or standard wheel
-      // If ctrlKey is pressed, it's likely a pinch-to-zoom gesture on trackpad or ctrl+wheel
-      // We want to handle both as zoom.
 
+      // Calculate Mouse Position in SVG Coordinates (relative to center)
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Container center
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+
+      // Mouse offset from center in pixels
+      const dxPixels = mouseX - cx;
+      const dyPixels = mouseY - cy;
+
+      // Convert to SVG units
+      // viewBox is 1000x1000. preserveAspectRatio="xMidYMid meet"
+      // The scale factor from SVG to Screen is min(width, height) / 1000
+      // So SVG units per pixel is 1000 / min(width, height)
+      const svgUnitsPerPixel = viewBoxSize / Math.min(rect.width, rect.height);
+
+      const mouseX_SVG = dxPixels * svgUnitsPerPixel;
+      const mouseY_SVG = dyPixels * svgUnitsPerPixel;
+
+      const scaleFactor = 1.1;
       const direction = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
 
-      setTransform(prev => ({
-        ...prev,
-        scale: Math.max(0.1, Math.min(50, prev.scale * direction))
-      }));
+      setTransform(prev => {
+        const newScale = Math.max(0.1, Math.min(50, prev.scale * direction));
+
+        // Formula: T_new = T_old + M_svg * (1/S_new - 1/S_old)
+        // This keeps the world point P under the mouse stationary.
+        // P = M_svg / S - T
+        // M_svg = S_new * (P + T_new)
+        // T_new = M_svg / S_new - P = M_svg / S_new - (M_svg / S_old - T_old)
+        // T_new = T_old + M_svg * (1/S_new - 1/S_old)
+
+        const newX = prev.x + mouseX_SVG * (1 / newScale - 1 / prev.scale);
+        const newY = prev.y + mouseY_SVG * (1 / newScale - 1 / prev.scale);
+
+        return {
+          x: newX,
+          y: newY,
+          scale: newScale
+        };
+      });
     };
 
     // React's onWheel is passive by default, so we must attach manually to prevent default
