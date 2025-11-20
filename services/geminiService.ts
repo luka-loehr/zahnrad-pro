@@ -104,7 +104,6 @@ const getStatusString = (state: GearSystemState): string => {
 - **Achsabstand:** ${state.distance.toFixed(2)} mm
 
 **WICHTIGE REGELN:**
-- outerDiameterCm muss zwischen 3cm und 6cm liegen (automatisch begrenzt)
 - radiusCm = outerDiameterCm / 2 (automatisch berechnet)
 - centerHoleDiameter Standard: 10mm (falls nicht gesetzt)
 - Übersetzungsverhältnis: ratio = teethCount_right / teethCount_left`;

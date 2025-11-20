@@ -95,29 +95,29 @@ const AIChat: React.FC<AIChatProps> = ({
                         // Helper function to validate and update gear params
                         const updateGear = (gear: typeof next.gear1, updates: any) => {
                             if (!updates) return gear;
-                            
+
                             const updated = { ...gear, ...updates };
-                            
-                            // Validate outerDiameterCm (3-6cm) and clamp if needed
+
+                            // Handle diameter and radius (no limits - user decides)
                             if (updates.outerDiameterCm !== undefined) {
-                                updated.outerDiameterCm = Math.max(3, Math.min(6, updates.outerDiameterCm));
+                                updated.outerDiameterCm = updates.outerDiameterCm;
                                 // Automatically calculate radiusCm
                                 updated.radiusCm = updated.outerDiameterCm / 2;
                             } else if (updates.radiusCm !== undefined) {
                                 // If radius is given, convert to diameter
                                 const diameter = updates.radiusCm * 2;
-                                updated.outerDiameterCm = Math.max(3, Math.min(6, diameter));
+                                updated.outerDiameterCm = diameter;
                                 updated.radiusCm = updated.outerDiameterCm / 2;
                             } else if (updates.outerDiameterCm === undefined && updates.radiusCm === undefined) {
                                 // Ensure radiusCm is always in sync
                                 updated.radiusCm = updated.outerDiameterCm / 2;
                             }
-                            
+
                             // Default centerHoleDiameter if not set
                             if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
                                 updated.centerHoleDiameter = 10; // mm
                             }
-                            
+
                             return updated;
                         };
 

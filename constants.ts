@@ -13,7 +13,7 @@ export const INITIAL_GEAR_1 = {
   profileShift: 0,
   color: GEAR_COLOR_BLUE,
   role: 'antrieb' as const,
-  outerDiameterCm: 4.5, // Standard zwischen 3-6cm
+  outerDiameterCm: 4.5,
   radiusCm: 2.25 // Automatisch: outerDiameterCm / 2
 };
 
@@ -25,7 +25,7 @@ export const INITIAL_GEAR_2 = {
   profileShift: 0,
   color: GEAR_COLOR_RED,
   role: 'abtrieb' as const,
-  outerDiameterCm: 4.5, // Standard zwischen 3-6cm
+  outerDiameterCm: 4.5,
   radiusCm: 2.25 // Automatisch: outerDiameterCm / 2
 };
 
@@ -63,7 +63,7 @@ Die aktuellen Parameter werden dir automatisch in diesem Prompt mitgegeben. Du k
       "toothCount": number, 
       "module": number, 
       "centerHoleDiameter": number (in mm, Standard: 10mm),
-      "outerDiameterCm": number (3-6cm, wird automatisch auf diesen Bereich begrenzt),
+      "outerDiameterCm": number (in cm),
       "radiusCm": number (automatisch: outerDiameterCm / 2),
       "role": "antrieb" oder "abtrieb"
     },
@@ -71,7 +71,7 @@ Die aktuellen Parameter werden dir automatisch in diesem Prompt mitgegeben. Du k
       "toothCount": number, 
       "module": number, 
       "centerHoleDiameter": number (in mm, Standard: 10mm),
-      "outerDiameterCm": number (3-6cm, wird automatisch auf diesen Bereich begrenzt),
+      "outerDiameterCm": number (in cm),
       "radiusCm": number (automatisch: outerDiameterCm / 2),
       "role": "antrieb" oder "abtrieb"
     }
@@ -80,9 +80,10 @@ Die aktuellen Parameter werden dir automatisch in diesem Prompt mitgegeben. Du k
 }
 WICHTIG: 
 - Nur die Felder angeben, die sich ändern. "gear1" = BLAUES Zahnrad (links, Standard: antrieb), "gear2" = ROTES Zahnrad (rechts, Standard: abtrieb).
-- outerDiameterCm muss zwischen 3cm und 6cm liegen (Werte außerhalb werden automatisch begrenzt).
+- outerDiameterCm kann beliebige Werte haben (der User entscheidet die Größe).
 - radiusCm wird automatisch berechnet (outerDiameterCm / 2), muss nicht gesetzt werden.
 - Wenn der User Radius angibt, automatisch in Durchmesser umrechnen (Durchmesser = Radius * 2).
+- centerHoleDiameter (Bohrung) kann ebenfalls beliebige Werte haben (Standard: 10mm falls nicht gesetzt).
 - Qualitative Angaben ("doppelt so groß", "halbe Größe") in konkrete Werte umsetzen.
 - Übersetzungsverhältnis automatisch berechnen: ratio = teethCount_right / teethCount_left.
 - Wenn User ein Verhältnis angibt (z.B. "1:2"), passende Zähnezahlen generieren.
