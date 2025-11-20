@@ -104,16 +104,32 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   // --- Interaction Handlers ---
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const scaleFactor = 1.1;
-    const direction = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-    setTransform(prev => ({
-      ...prev,
-      scale: Math.max(0.1, Math.min(50, prev.scale * direction))
-    }));
-  };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const scaleFactor = 1.1;
+      // Check for pinch gesture (ctrlKey) or standard wheel
+      // If ctrlKey is pressed, it's likely a pinch-to-zoom gesture on trackpad or ctrl+wheel
+      // We want to handle both as zoom.
+
+      const direction = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
+
+      setTransform(prev => ({
+        ...prev,
+        scale: Math.max(0.1, Math.min(50, prev.scale * direction))
+      }));
+    };
+
+    // React's onWheel is passive by default, so we must attach manually to prevent default
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', onWheel);
+    };
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -160,7 +176,6 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
       className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex items-center justify-center cursor-move"
       id={id}
       ref={containerRef}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
