@@ -118,7 +118,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1">Modul (Größe)</label>
+                                <label className="block text-xs text-slate-400 mb-1">Modul (mm)</label>
                                 <input
                                     type="number" step="0.1"
                                     value={state.gear1.module}
@@ -177,7 +177,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1">Bohrung Ø</label>
+                                <label className="block text-xs text-slate-400 mb-1">Bohrung Ø (mm)</label>
                                 <input
                                     type="number"
                                     value={state.gear1.centerHoleDiameter}
@@ -216,7 +216,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1">Hole Ø</label>
+                                <label className="block text-xs text-slate-400 mb-1">Bohrung Ø (mm)</label>
                                 <input
                                     type="number"
                                     value={state.gear2.centerHoleDiameter}
@@ -241,8 +241,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
                         <button
                             onClick={() => setState(s => ({ ...s, isPlaying: !s.isPlaying }))}
                             className={`w-full flex items-center justify-center gap-2 p-3 rounded font-bold transition-colors ${state.isPlaying
-                                    ? 'bg-slate-700 text-red-400 hover:bg-slate-600'
-                                    : 'bg-brand-600 text-white hover:bg-brand-500'
+                                ? 'bg-slate-700 text-red-400 hover:bg-slate-600'
+                                : 'bg-brand-600 text-white hover:bg-brand-500'
                                 }`}
                         >
                             {state.isPlaying ? <><Pause className="w-4 h-4" /> Simulation stoppen</> : <><Play className="w-4 h-4" /> Simulieren</>}
@@ -265,10 +265,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
                         {chatHistory.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] rounded-lg p-3 text-sm ${msg.role === 'user'
-                                        ? 'bg-brand-600 text-white'
-                                        : msg.isError
-                                            ? 'bg-red-900/50 border border-red-700 text-red-200'
-                                            : 'bg-slate-700 text-slate-200'
+                                    ? 'bg-brand-600 text-white'
+                                    : msg.isError
+                                        ? 'bg-red-900/50 border border-red-700 text-red-200'
+                                        : 'bg-slate-700 text-slate-200'
                                     }`}>
                                     {msg.text}
                                 </div>
