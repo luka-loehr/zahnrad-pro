@@ -65,40 +65,12 @@ const ACTION_RESPONSE_SCHEMA = {
   }
 };
 
-// Generate status string from current state
+// Generate compact status string for current state
 const getStatusString = (state: GearSystemState): string => {
-  return `**AKTUELLE PARAMETER - DU HAST IMMER ZUGRIFF AUF ALLE WERTE:**
-
-**GLOBALE PARAMETER:**
-- **Animationsgeschwindigkeit:** ${state.speed} U/min
-- **Renderer-Skalierung:** ${state.rendererScale} (1 Kachel = ${state.rendererScale} ${state.unit})
-- **SVG-Skalierung:** ${state.svgScale}
-- **Maßeinheit:** ${state.unit}
-
-**BLAUES ZAHNRAD (links, gear1):**
-- **Rolle:** ${state.gear1.role}
-- **Zähnezahl:** ${state.gear1.toothCount}
-- **Modul:** ${state.gear1.module} mm
-- **Äußerer Durchmesser:** ${((state.gear1.module * state.gear1.toothCount + 2 * state.gear1.module * (1 + state.gear1.profileShift)) / 10).toFixed(2)} cm (berechnet aus Modul × Zähne)
-- **Bohrungsdurchmesser:** ${state.gear1.centerHoleDiameter} mm
-- **Farbe:** Blau
-
-**ROTES ZAHNRAD (rechts, gear2):**
-- **Rolle:** ${state.gear2.role}
-- **Zähnezahl:** ${state.gear2.toothCount}
-- **Modul:** ${state.gear2.module} mm
-- **Äußerer Durchmesser:** ${((state.gear2.module * state.gear2.toothCount + 2 * state.gear2.module * (1 + state.gear2.profileShift)) / 10).toFixed(2)} cm (berechnet aus Modul × Zähne)
-- **Bohrungsdurchmesser:** ${state.gear2.centerHoleDiameter} mm
-- **Farbe:** Rot
-
-**ÜBERSETZUNGSVERHÄLTNIS:**
-- **Übersetzungsverhältnis:** ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount})
-- **Achsabstand:** ${state.distance.toFixed(2)} mm
-
-**WICHTIGE REGELN:**
-- Durchmesser wird automatisch berechnet: Ø = Modul × Zähne + 2 × Addendum
-- Bohrungsdurchmesser Standard: 5mm (falls nicht gesetzt)
-- Übersetzungsverhältnis: Zähnezahl_rechts ÷ Zähnezahl_links`;
+  return `**AKTUELLE WERTE:**
+Blau: ${state.gear1.toothCount} Zähne, ${state.gear1.module}mm Modul, ${state.gear1.centerHoleDiameter}mm Bohrung
+Rot: ${state.gear2.toothCount} Zähne, ${state.gear2.module}mm Modul, ${state.gear2.centerHoleDiameter}mm Bohrung
+Übersetzung: ${state.ratio.toFixed(2)}, Geschwindigkeit: ${state.speed} U/min`;
 };
 
 // Streaming version - yields text chunks as they arrive
@@ -121,9 +93,8 @@ export async function* streamMessageToGemini(
     parts: [{ text: msg.text }]
   }));
 
-  // If this is the first user message (only welcome message exists) and state is provided, add status to system prompt
-  const isFirstUserMessage = chatHistory.length === 1;
-  const systemPrompt = isFirstUserMessage && currentState
+  // Always add current state if provided (compact status as footer)
+  const systemPrompt = currentState
     ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
     : SYSTEM_PROMPT;
 
@@ -198,9 +169,8 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
     parts: [{ text: msg.text }]
   }));
 
-  // If this is the first user message (only welcome message exists) and state is provided, add status to system prompt
-  const isFirstUserMessage = chatHistory.length === 1;
-  const systemPrompt = isFirstUserMessage && currentState
+  // Always add current state if provided (compact status as footer)
+  const systemPrompt = currentState
     ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
     : SYSTEM_PROMPT;
 
