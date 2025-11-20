@@ -79,13 +79,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
 
         try {
             const responseText = await sendMessageToGemini(userMsg);
+            console.log("🤖 AI Raw Response:", responseText); // DEBUG LOG
 
             // Try to find JSON in the response
             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
             if (jsonMatch) {
                 try {
+                    console.log("🔍 Found JSON candidate:", jsonMatch[0]); // DEBUG LOG
                     const command = JSON.parse(jsonMatch[0]);
+                    console.log("✅ Parsed Command:", command); // DEBUG LOG
 
                     if (command.action === 'update_params' && command.params) {
                         setState(prev => {
@@ -106,18 +109,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
 
                         setChatHistory(prev => [...prev, { role: 'model', text: command.message || "Parameter aktualisiert." }]);
                     } else {
+                        console.log("⚠️ JSON found but action unknown or params missing"); // DEBUG LOG
                         // JSON found but not an action we know, just show text
                         setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
                     }
                 } catch (e) {
-                    console.error("Failed to parse AI JSON", e);
+                    console.error("❌ Failed to parse AI JSON:", e); // DEBUG LOG
                     setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
                 }
             } else {
+                console.log("ℹ️ No JSON found in response"); // DEBUG LOG
                 setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
             }
 
         } catch (error) {
+            console.error("🔥 AI Service Error:", error); // DEBUG LOG
             setChatHistory(prev => [...prev, { role: 'model', text: 'Fehler: Verbindung zur KI nicht möglich. Prüfen Sie den API-Schlüssel.', isError: true }]);
         } finally {
             setIsAiLoading(false);
