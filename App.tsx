@@ -39,14 +39,16 @@ const App: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Initialize chat sessions
+  // Initialize chat sessions - ALWAYS create a new chat on load
   const [chatList, setChatList] = useState<ChatList>(() => {
+    let existingChats: ChatSession[] = [];
+
     try {
-      // Try to load new format
+      // Load existing chats from localStorage
       const saved = localStorage.getItem(CHAT_SESSIONS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as ChatList;
-        return parsed;
+        existingChats = parsed.chats;
       }
 
       // Check for old format and migrate
@@ -60,17 +62,14 @@ const App: React.FC = () => {
           lastMessageAt: Date.now(),
           messages: oldMessages
         };
+        existingChats.push(migratedChat);
         localStorage.removeItem(OLD_CHAT_HISTORY_KEY);
-        return {
-          currentChatId: migratedChat.id,
-          chats: [migratedChat]
-        };
       }
     } catch (e) {
       console.error('Failed to load chat sessions:', e);
     }
 
-    // Create new empty chat
+    // ALWAYS create a new chat on page load/refresh
     const newChat: ChatSession = {
       id: Date.now().toString(),
       name: 'Neuer Chat',
@@ -79,9 +78,12 @@ const App: React.FC = () => {
       messages: [DEFAULT_WELCOME_MESSAGE]
     };
 
+    // Add new chat to the beginning and limit total chats
+    const allChats = [newChat, ...existingChats].slice(0, MAX_CHATS);
+
     return {
       currentChatId: newChat.id,
-      chats: [newChat]
+      chats: allChats
     };
   });
 
@@ -198,7 +200,8 @@ const App: React.FC = () => {
   <path d="${pathData}" fill="none" stroke="black" stroke-width="1" transform="translate(${offset}, ${offset})"/>
 </svg>`.trim();
 
-    downloadSVG(svgContent, `gear-m${gear.module}-z${gear.toothCount}.svg`);
+    const gearName = gearIdx === 1 ? 'Blaues_Zahnrad' : 'Rotes_Zahnrad';
+    downloadSVG(svgContent, `${gearName}.svg`);
   };
 
   return (
