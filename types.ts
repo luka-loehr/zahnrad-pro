@@ -2,9 +2,13 @@ export interface GearParams {
   toothCount: number;
   module: number;
   pressureAngle: number; // in degrees
-  centerHoleDiameter: number;
+  centerHoleDiameter: number; // in mm
   profileShift: number;
   color: string;
+  // Neue Parameter
+  role: 'antrieb' | 'abtrieb'; // Antrieb oder Abtrieb
+  outerDiameterCm: number; // Äußerer Durchmesser in cm (3-6cm)
+  radiusCm: number; // Radius in cm (automatisch: outerDiameterCm / 2)
 }
 
 export interface GearSystemState {
@@ -13,8 +17,12 @@ export interface GearSystemState {
   distance: number; // Center distance
   ratio: number; // Gear ratio (z2 / z1)
   lockedRatio: boolean;
-  speed: number; // RPM
+  speed: number; // RPM (animationSpeed)
   isPlaying: boolean;
+  // Globale Parameter
+  rendererScale: number; // Tile-Size / Renderer-Scale (1 Kachel = X cm)
+  svgScale: number; // SVG-Skalierung
+  unit: 'cm' | 'mm'; // Aktuelle Maßeinheit
 }
 
 export interface ChatMessage {

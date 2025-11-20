@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
-import { ChatMessage } from '../types';
+import { ChatMessage, GearSystemState } from '../types';
 
 const MODEL_ID = 'gemini-2.5-flash';
 const MAX_LOG_LENGTH = 160;
@@ -46,7 +46,10 @@ const ACTION_RESPONSE_SCHEMA = {
             properties: {
               toothCount: { type: Type.NUMBER, nullable: true },
               module: { type: Type.NUMBER, nullable: true },
-              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
+              centerHoleDiameter: { type: Type.NUMBER, nullable: true },
+              outerDiameterCm: { type: Type.NUMBER, nullable: true },
+              radiusCm: { type: Type.NUMBER, nullable: true },
+              role: { type: Type.STRING, enum: ['antrieb', 'abtrieb'], nullable: true }
             }
           },
           gear2: {
@@ -55,7 +58,10 @@ const ACTION_RESPONSE_SCHEMA = {
             properties: {
               toothCount: { type: Type.NUMBER, nullable: true },
               module: { type: Type.NUMBER, nullable: true },
-              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
+              centerHoleDiameter: { type: Type.NUMBER, nullable: true },
+              outerDiameterCm: { type: Type.NUMBER, nullable: true },
+              radiusCm: { type: Type.NUMBER, nullable: true },
+              role: { type: Type.STRING, enum: ['antrieb', 'abtrieb'], nullable: true }
             }
           },
         }
@@ -65,10 +71,50 @@ const ACTION_RESPONSE_SCHEMA = {
   }
 };
 
+// Generate status string from current state
+const getStatusString = (state: GearSystemState): string => {
+  return `**AKTUELLE PARAMETER - DU HAST IMMER ZUGRIFF AUF ALLE WERTE:**
+
+**GLOBALE PARAMETER:**
+- **Animation Speed:** ${state.speed} RPM
+- **Renderer Scale:** ${state.rendererScale} (1 Kachel = ${state.rendererScale} ${state.unit})
+- **SVG Scale:** ${state.svgScale}
+- **Maßeinheit:** ${state.unit}
+
+**BLAUES ZAHNRAD (links, gear1):**
+- **Rolle:** ${state.gear1.role}
+- **Zähnezahl:** ${state.gear1.toothCount}
+- **Modul:** ${state.gear1.module} mm
+- **Äußerer Durchmesser:** ${state.gear1.outerDiameterCm} cm
+- **Radius:** ${state.gear1.radiusCm} cm
+- **Bohrungsdurchmesser:** ${state.gear1.centerHoleDiameter} mm
+- **Farbe:** Blau
+
+**ROTES ZAHNRAD (rechts, gear2):**
+- **Rolle:** ${state.gear2.role}
+- **Zähnezahl:** ${state.gear2.toothCount}
+- **Modul:** ${state.gear2.module} mm
+- **Äußerer Durchmesser:** ${state.gear2.outerDiameterCm} cm
+- **Radius:** ${state.gear2.radiusCm} cm
+- **Bohrungsdurchmesser:** ${state.gear2.centerHoleDiameter} mm
+- **Farbe:** Rot
+
+**ÜBERSETZUNGSVERHÄLTNIS:**
+- **Ratio:** ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount})
+- **Achsabstand:** ${state.distance.toFixed(2)} mm
+
+**WICHTIGE REGELN:**
+- outerDiameterCm muss zwischen 3cm und 6cm liegen (automatisch begrenzt)
+- radiusCm = outerDiameterCm / 2 (automatisch berechnet)
+- centerHoleDiameter Standard: 10mm (falls nicht gesetzt)
+- Übersetzungsverhältnis: ratio = teethCount_right / teethCount_left`;
+};
+
 // Streaming version - yields text chunks as they arrive
 export async function* streamMessageToGemini(
   message: string,
-  chatHistory: ChatMessage[] = []
+  chatHistory: ChatMessage[] = [],
+  currentState?: GearSystemState
 ): AsyncGenerator<string, void, unknown> {
   if (!process.env.API_KEY) {
     console.error('[Gemini] API key missing before request dispatch.');
@@ -84,6 +130,12 @@ export async function* streamMessageToGemini(
     parts: [{ text: msg.text }]
   }));
 
+  // If this is the first user message (only welcome message exists) and state is provided, add status to system prompt
+  const isFirstUserMessage = chatHistory.length === 1;
+  const systemPrompt = isFirstUserMessage && currentState
+    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
+    : SYSTEM_PROMPT;
+
   const payload = {
     model: MODEL_ID,
     contents: [
@@ -91,7 +143,7 @@ export async function* streamMessageToGemini(
       { role: 'user' as const, parts: [{ text: message }] }
     ],
     config: {
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: systemPrompt,
       responseMimeType: 'application/json',
       responseSchema: ACTION_RESPONSE_SCHEMA,
     }
@@ -140,7 +192,7 @@ export async function* streamMessageToGemini(
 }
 
 // Non-streaming version (kept for backwards compatibility)
-export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = []): Promise<string> => {
+export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = [], currentState?: GearSystemState): Promise<string> => {
   if (!process.env.API_KEY) {
     console.error('[Gemini] API key missing before request dispatch.');
     throw new Error("API Key not configured");
@@ -155,6 +207,12 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
     parts: [{ text: msg.text }]
   }));
 
+  // If this is the first user message (only welcome message exists) and state is provided, add status to system prompt
+  const isFirstUserMessage = chatHistory.length === 1;
+  const systemPrompt = isFirstUserMessage && currentState
+    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
+    : SYSTEM_PROMPT;
+
   const payload = {
     model: MODEL_ID,
     contents: [
@@ -162,7 +220,7 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
       { role: 'user' as const, parts: [{ text: message }] }
     ],
     config: {
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: systemPrompt,
       responseMimeType: 'application/json',
       responseSchema: ACTION_RESPONSE_SCHEMA,
     }

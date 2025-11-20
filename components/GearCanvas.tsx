@@ -346,13 +346,42 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
             <circle r={(state.gear2.module * state.gear2.toothCount) / 2} fill="none" stroke="white" strokeOpacity="0.1" strokeDasharray="1 1" />
           </g>
 
-          {/* Annotations - Scale independent? No, let them scale so we can read them when zoomed in? Or keep fixed size? 
-                     If we put them inside the scaled group, they scale. 
-                     Let's keep them scaling for now as they are part of the geometry.
-                 */}
+          {/* Gear 1 Annotations */}
+          <g transform={`translate(0, ${-maxDiameter / 2.5})`}>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 35} className="font-mono opacity-80" fontWeight="bold">
+              {state.gear1.role === 'antrieb' ? '⚙️ Antrieb' : '⚙️ Abtrieb'} (Blau)
+            </text>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="1.2em">
+              Ø: {state.gear1.outerDiameterCm}cm | R: {state.gear1.radiusCm}cm
+            </text>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="2.4em">
+              Bohrung: {state.gear1.centerHoleDiameter}mm | Zähne: {state.gear1.toothCount}
+            </text>
+          </g>
+
+          {/* Gear 2 Annotations */}
+          <g transform={`translate(${centerDist}, ${-maxDiameter / 2.5})`}>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 35} className="font-mono opacity-80" fontWeight="bold">
+              {state.gear2.role === 'antrieb' ? '⚙️ Antrieb' : '⚙️ Abtrieb'} (Rot)
+            </text>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="1.2em">
+              Ø: {state.gear2.outerDiameterCm}cm | R: {state.gear2.radiusCm}cm
+            </text>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="2.4em">
+              Bohrung: {state.gear2.centerHoleDiameter}mm | Zähne: {state.gear2.toothCount}
+            </text>
+          </g>
+
+          {/* Center Info */}
           <g transform={`translate(${centerDist / 2}, ${maxDiameter / 3})`}>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 30} className="font-mono opacity-50">
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 30} className="font-mono opacity-70">
+              Ratio: {state.ratio.toFixed(2)} ({state.gear2.toothCount}:{state.gear1.toothCount})
+            </text>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 35} className="font-mono opacity-60" dy="1.2em">
               Achsabstand: {centerDist.toFixed(2)}mm
+            </text>
+            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-50" dy="2.4em">
+              1 Kachel = {state.rendererScale} {state.unit}
             </text>
           </g>
         </g>

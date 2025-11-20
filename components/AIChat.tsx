@@ -46,7 +46,9 @@ const AIChat: React.FC<AIChatProps> = ({
             let fullResponse = '';
 
             // Stream the response (now guaranteed to be valid JSON)
-            for await (const chunk of streamMessageToGemini(userMsg, messages)) {
+            // Pass state only on first user message (when only welcome message exists)
+            const isFirstUserMessage = messages.length === 1;
+            for await (const chunk of streamMessageToGemini(userMsg, messages, isFirstUserMessage ? state : undefined)) {
                 fullResponse += chunk;
                 setStreamingMessage(fullResponse);
             }
@@ -90,8 +92,37 @@ const AIChat: React.FC<AIChatProps> = ({
                         const next = { ...prev };
                         const p = command.params;
 
-                        if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
-                        if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
+                        // Helper function to validate and update gear params
+                        const updateGear = (gear: typeof next.gear1, updates: any) => {
+                            if (!updates) return gear;
+                            
+                            const updated = { ...gear, ...updates };
+                            
+                            // Validate outerDiameterCm (3-6cm) and clamp if needed
+                            if (updates.outerDiameterCm !== undefined) {
+                                updated.outerDiameterCm = Math.max(3, Math.min(6, updates.outerDiameterCm));
+                                // Automatically calculate radiusCm
+                                updated.radiusCm = updated.outerDiameterCm / 2;
+                            } else if (updates.radiusCm !== undefined) {
+                                // If radius is given, convert to diameter
+                                const diameter = updates.radiusCm * 2;
+                                updated.outerDiameterCm = Math.max(3, Math.min(6, diameter));
+                                updated.radiusCm = updated.outerDiameterCm / 2;
+                            } else if (updates.outerDiameterCm === undefined && updates.radiusCm === undefined) {
+                                // Ensure radiusCm is always in sync
+                                updated.radiusCm = updated.outerDiameterCm / 2;
+                            }
+                            
+                            // Default centerHoleDiameter if not set
+                            if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
+                                updated.centerHoleDiameter = 10; // mm
+                            }
+                            
+                            return updated;
+                        };
+
+                        if (p.gear1) next.gear1 = updateGear(next.gear1, p.gear1);
+                        if (p.gear2) next.gear2 = updateGear(next.gear2, p.gear2);
 
                         // Recalculate ratio if teeth changed
                         if (p.gear1?.toothCount || p.gear2?.toothCount) {

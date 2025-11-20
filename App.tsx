@@ -34,7 +34,10 @@ const App: React.FC = () => {
     ratio: INITIAL_GEAR_2.toothCount / INITIAL_GEAR_1.toothCount,
     lockedRatio: true,
     speed: 10,
-    isPlaying: true
+    isPlaying: true,
+    rendererScale: 1, // 1 Kachel = 1 cm
+    svgScale: 1,
+    unit: 'cm'
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -190,13 +193,19 @@ const App: React.FC = () => {
   const handleDownload = (gearIdx: 1 | 2) => {
     const gear = gearIdx === 1 ? state.gear1 : state.gear2;
     const pathData = generateGearPath(gear);
-    const size = (gear.module * gear.toothCount) + (4 * gear.module);
+    
+    // Use exact outer diameter from configuration (convert cm to mm for SVG)
+    const outerDiameterMm = gear.outerDiameterCm * 10;
+    const size = outerDiameterMm * state.svgScale; // Apply SVG scale
     const offset = size / 2;
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}mm" height="${size}mm">
   <!-- GearGen Pro Export -->
-  <!-- Module: ${gear.module}, Teeth: ${gear.toothCount}, Pressure Angle: ${gear.pressureAngle} -->
+  <!-- Role: ${gear.role}, Outer Diameter: ${gear.outerDiameterCm}cm, Radius: ${gear.radiusCm}cm -->
+  <!-- Module: ${gear.module}mm, Teeth: ${gear.toothCount}, Pressure Angle: ${gear.pressureAngle}° -->
+  <!-- Center Hole Diameter: ${gear.centerHoleDiameter}mm -->
+  <!-- Ratio: ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount}) -->
   <path d="${pathData}" fill="none" stroke="black" stroke-width="1" transform="translate(${offset}, ${offset})"/>
 </svg>`.trim();
 
