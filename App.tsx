@@ -15,14 +15,10 @@ const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   text: `Hey! 👋 Ich bin ZahnradPro, gebaut von Luka.
 
 Sag mir einfach:
-
-wie viele Zähne ein Zahnrad haben soll,
-
-welches Übersetzungsverhältnis du brauchst,
-
-welche Bohrung du willst,
-
-oder frag mich irgendwas – ich erklär dir alles zu Zahnrädern und Formeln.
+• wie viele Zähne ein Zahnrad haben soll
+• welches Übersetzungsverhältnis du brauchst
+• welche Bohrung du willst
+• oder frag mich irgendwas – ich erklär dir alles zu Zahnrädern und Formeln
 
 Und wenn alles passt: „Gib mir die SVG-Datei."
 
