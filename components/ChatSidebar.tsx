@@ -36,9 +36,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm('Chat wirklich löschen?')) {
-            onDeleteChat(id);
-        }
+        onDeleteChat(id);
     };
 
     // Sort chats by lastMessageAt (newest first)

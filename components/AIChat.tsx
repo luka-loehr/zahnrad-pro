@@ -175,10 +175,11 @@ const AIChat: React.FC<AIChatProps> = ({
                 </div>
                 <button
                     onClick={onNewChat}
-                    className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    className="px-3 py-2 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 rounded-lg text-white font-medium transition-colors flex items-center gap-1.5"
                     title="Neuer Chat"
                 >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm">Neu</span>
                 </button>
             </div>
 

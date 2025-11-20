@@ -12,18 +12,19 @@ const MAX_CHATS = 50;
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   role: 'model',
-  text: `Yo! 👋 Willkommen bei ZahnradPro
+  text: `Hey! 👋 Ich bin **ZahnradPro** – dein KI-Assistent für Zahnräder.
 
-Ich bin dein KI-Assistent für Zahnräder. Links hast du ein **blaues** Zahnrad, rechts ein **rotes** – die Farben sind fix, aber alles andere kannst du ändern.
+**Was kann ich für dich tun?**
 
-**Was ich für dich tun kann:**
-• "Gib mir die SVG vom blauen Zahnrad" → Download
-• "Mach 20 Zähne" → Parameter ändern
-• "Größeres Modul" → Easy done
-• "Mach schneller" → Speed ändern
-• Oder frag mich einfach irgendwas zu Zahnrädern
+📥 **SVG-Dateien herunterladen** – Sag einfach "Gib mir die SVG" oder "Download beide Zahnräder"
 
-Schreib einfach, was du brauchst – kein Stress, kein Gelaber. Let's build! 🔧`
+⚙️ **Übersetzung anpassen** – "Mach ein 1:3 Verhältnis" oder "24 Zähne für das rote Zahnrad"
+
+🔧 **Parameter ändern** – "Kleinere Zähne", "Bohrung 3mm", "Schneller drehen"
+
+📐 **Berechnungen & Formeln** – Frag mich zu Modul, Teilkreisdurchmesser, Achsabstand oder was auch immer
+
+Leg einfach los! 🚀`
 };
 
 const App: React.FC = () => {
