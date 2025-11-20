@@ -324,11 +324,23 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           </div>
         </div>
 
-        {/* System Info (Center) */}
+        {/* General Info (Center) */}
         <div className="bg-slate-900/60 backdrop-blur-md p-3 rounded-xl border border-slate-700/50 shadow-lg flex flex-col gap-1 min-w-[140px]">
-          <div className="text-slate-400 font-bold text-xs uppercase tracking-wider text-center mb-1">System</div>
+          <div className="text-slate-400 font-bold text-xs uppercase tracking-wider text-center mb-1">Allgemeines</div>
           <div className="text-xs text-slate-300 font-mono space-y-1">
-            <div className="flex justify-between"><span>Ratio:</span> <span className="text-white font-bold">{state.ratio.toFixed(2)}</span></div>
+            <div className="flex justify-between">
+              <span>Übersetzung:</span>
+              <span className="text-white font-bold">
+                {(() => {
+                  // Calculate GCD to simplify ratio
+                  const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+                  const divisor = gcd(state.gear1.toothCount, state.gear2.toothCount);
+                  const left = state.gear1.toothCount / divisor;
+                  const right = state.gear2.toothCount / divisor;
+                  return `${left}:${right}`;
+                })()}
+              </span>
+            </div>
             <div className="flex justify-between"><span>Abstand:</span> <span className="text-white">{centerDist.toFixed(2)}mm</span></div>
             <div className="flex justify-between"><span>Zahngröße:</span> <span className="text-white">{state.gear1.module}mm</span></div>
           </div>
