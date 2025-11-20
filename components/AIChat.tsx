@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GearSystemState, ChatMessage } from '../types';
-import { MessageSquare, Send, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, AlertCircle, Menu } from 'lucide-react';
 import { sendMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
 
@@ -8,57 +8,40 @@ interface AIChatProps {
     state: GearSystemState;
     setState: React.Dispatch<React.SetStateAction<GearSystemState>>;
     onDownload: (gearIndex: 1 | 2) => void;
+    messages: ChatMessage[];
+    chatName: string;
+    onSendMessage: (message: string) => void;
+    onToggleSidebar: () => void;
+    onChatNamed: (name: string) => void;
 }
 
-const CHAT_HISTORY_KEY = 'geargen-chat-history';
-
-const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
-    role: 'model',
-    text: `Yo! 👋 Willkommen bei GearGen Pro
-
-Ich bin dein KI-Assistent für Zahnräder. Links hast du ein **blaues** Zahnrad, rechts ein **rotes** – die Farben sind fix, aber alles andere kannst du ändern.
-
-**Was ich für dich tun kann:**
-• "Gib mir die SVG vom blauen Zahnrad" → Download
-• "Mach 20 Zähne" → Parameter ändern
-• "Größeres Modul" → Easy done
-• "Start die Animation" → Let's go
-• Oder frag mich einfach irgendwas zu Zahnrädern
-
-Schreib einfach, was du brauchst – kein Stress, kein Gelaber. Let's build! 🔧`
-};
-
-const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
+const AIChat: React.FC<AIChatProps> = ({
+    state,
+    setState,
+    onDownload,
+    messages,
+    chatName,
+    onSendMessage,
+    onToggleSidebar,
+    onChatNamed
+}) => {
     const [chatInput, setChatInput] = useState('');
-
-    // Load chat history from localStorage or use default
-    const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
-        try {
-            const saved = localStorage.getItem(CHAT_HISTORY_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                return parsed.length > 0 ? parsed : [DEFAULT_WELCOME_MESSAGE];
-            }
-        } catch (e) {
-            console.error('Failed to load chat history:', e);
-        }
-        return [DEFAULT_WELCOME_MESSAGE];
-    });
-
     const [isAiLoading, setIsAiLoading] = useState(false);
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
     const handleAiSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!chatInput.trim()) return;
+        if (!chatInput.trim() || isAiLoading) return;
 
         const userMsg = chatInput;
         setChatInput('');
-        setChatHistory(prev => [...prev, { role: 'user', text: userMsg }]);
+
+        // Add user message through parent
+        onSendMessage(userMsg);
         setIsAiLoading(true);
 
         try {
-            const responseText = await sendMessageToGemini(userMsg, chatHistory);
+            const responseText = await sendMessageToGemini(userMsg, messages);
             console.log("🤖 AI Raw Response:", responseText);
 
             // Try to find JSON in the response
@@ -70,22 +53,23 @@ const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
                     const command = JSON.parse(jsonMatch[0]);
                     console.log("✅ Parsed Command:", command);
 
+                    // Handle name_chat action
+                    if (command.action === 'name_chat' && command.chatName) {
+                        onChatNamed(command.chatName);
+                        if (command.message) {
+                            onSendMessage(command.message, 'model');
+                        }
+                    }
                     // Handle download_svg action
-                    if (command.action === 'download_svg' && command.gear) {
+                    else if (command.action === 'download_svg' && command.gear) {
                         const gearIndex = command.gear === 'blue' ? 1 : 2;
                         onDownload(gearIndex);
-                        setChatHistory(prev => [...prev, {
-                            role: 'model',
-                            text: command.message || `SVG-Datei für das ${command.gear === 'blue' ? 'blaue' : 'rote'} Zahnrad wird heruntergeladen...`
-                        }]);
+                        onSendMessage(command.message || `Alles klar, lade dir das ${command.gear === 'blue' ? 'blaue' : 'rote'} Zahnrad runter 👍`, 'model');
                     }
                     // Handle toggle_animation action
                     else if (command.action === 'toggle_animation' && command.playing !== undefined) {
                         setState(prev => ({ ...prev, isPlaying: command.playing }));
-                        setChatHistory(prev => [...prev, {
-                            role: 'model',
-                            text: command.message || `Animation ${command.playing ? 'gestartet' : 'gestoppt'}.`
-                        }]);
+                        onSendMessage(command.message || `Animation ${command.playing ? 'gestartet' : 'gestoppt'}.`, 'model');
                     }
                     // Handle update_params action
                     else if (command.action === 'update_params' && command.params) {
@@ -105,52 +89,52 @@ const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
                             return next;
                         });
 
-                        setChatHistory(prev => [...prev, { role: 'model', text: command.message || "Parameter aktualisiert." }]);
+                        onSendMessage(command.message || "Parameter aktualisiert.", 'model');
                     } else {
                         console.log("⚠️ JSON found but action unknown or params missing");
-                        setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+                        onSendMessage(responseText, 'model');
                     }
                 } catch (e) {
                     console.error("❌ Failed to parse AI JSON:", e);
-                    setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+                    onSendMessage(responseText, 'model');
                 }
             } else {
                 console.log("ℹ️ No JSON found in response");
-                setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+                onSendMessage(responseText, 'model');
             }
 
         } catch (error) {
             console.error("🔥 AI Service Error:", error);
-            setChatHistory(prev => [...prev, { role: 'model', text: 'Fehler: Verbindung zur KI nicht möglich. Prüfen Sie den API-Schlüssel.', isError: true }]);
+            onSendMessage('Fehler: Verbindung zur KI nicht möglich. Prüfen Sie den API-Schlüssel.', 'model', true);
         } finally {
             setIsAiLoading(false);
         }
     };
 
-    // Save chat history to localStorage whenever it changes
-    useEffect(() => {
-        try {
-            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
-        } catch (e) {
-            console.error('Failed to save chat history:', e);
-        }
-    }, [chatHistory]);
-
-    // Auto-scroll to bottom when chat history updates
+    // Auto-scroll to bottom when messages update
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [chatHistory, isAiLoading]);
+    }, [messages, isAiLoading]);
 
     return (
         <div className="w-full md:w-1/2 bg-slate-800 flex flex-col shadow-xl border-r border-slate-700">
             {/* Header */}
-            <div className="p-4 border-b border-slate-700 bg-slate-900">
-                <h1 className="font-bold text-xl text-white flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-brand-500" />
-                    GearGen Pro - KI Assistant
-                </h1>
+            <div className="p-4 border-b border-slate-700 bg-slate-900 flex items-center gap-3">
+                <button
+                    onClick={onToggleSidebar}
+                    className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    title="Chat-Verlauf öffnen"
+                >
+                    <Menu className="w-5 h-5" />
+                </button>
+                <div className="flex-1">
+                    <h1 className="font-bold text-lg text-white flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-brand-500" />
+                        {chatName}
+                    </h1>
+                </div>
             </div>
 
             {/* Chat Messages */}
@@ -159,7 +143,7 @@ const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
                 className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/50"
                 style={{ WebkitOverflowScrolling: 'touch' }}
             >
-                {chatHistory.map((msg, idx) => (
+                {messages.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] rounded-lg p-3 text-sm ${msg.role === 'user'
                             ? 'bg-brand-600 text-white'

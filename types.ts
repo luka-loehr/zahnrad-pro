@@ -22,3 +22,16 @@ export interface ChatMessage {
   text: string;
   isError?: boolean;
 }
+
+export interface ChatSession {
+  id: string;           // Unique ID (timestamp-based)
+  name: string;         // AI-generated or "Neuer Chat"
+  createdAt: number;    // Timestamp
+  lastMessageAt: number; // Timestamp
+  messages: ChatMessage[];
+}
+
+export interface ChatList {
+  currentChatId: string;
+  chats: ChatSession[];
+}
