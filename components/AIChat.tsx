@@ -44,56 +44,75 @@ const AIChat: React.FC<AIChatProps> = ({
             const responseText = await sendMessageToGemini(userMsg, messages);
             console.log("🤖 AI Raw Response:", responseText);
 
-            // Try to find JSON in the response
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            // Try to find JSON in the response (either object or array)
+            const jsonMatch = responseText.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
 
             if (jsonMatch) {
                 try {
                     console.log("🔍 Found JSON candidate:", jsonMatch[0]);
-                    const command = JSON.parse(jsonMatch[0]);
-                    console.log("✅ Parsed Command:", command);
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    console.log("✅ Parsed JSON:", parsed);
 
-                    // Handle name_chat action
-                    if (command.action === 'name_chat' && command.chatName) {
-                        onChatNamed(command.chatName);
-                        if (command.message) {
-                            onSendMessage(command.message, 'model');
+                    // Normalize to array (if single object, wrap it)
+                    const commands = Array.isArray(parsed) ? parsed : [parsed];
+                    console.log(`📋 Processing ${commands.length} command(s)`);
+
+                    let messageToShow = '';
+                    let actionExecuted = false;
+
+                    // Process all commands
+                    for (const command of commands) {
+                        // Collect the message from the first command that has one
+                        if (!messageToShow && command.message) {
+                            messageToShow = command.message;
+                        }
+
+                        // Handle name_chat action
+                        if (command.action === 'name_chat' && command.chatName) {
+                            onChatNamed(command.chatName);
+                            actionExecuted = true;
+                        }
+                        // Handle download_svg action
+                        else if (command.action === 'download_svg' && command.gear) {
+                            const gearIndex = command.gear === 'blue' ? 1 : 2;
+                            onDownload(gearIndex);
+                            actionExecuted = true;
+                            console.log(`⬇️ Downloaded ${command.gear} gear`);
+                        }
+                        // Handle toggle_animation action
+                        else if (command.action === 'toggle_animation' && command.playing !== undefined) {
+                            setState(prev => ({ ...prev, isPlaying: command.playing }));
+                            actionExecuted = true;
+                        }
+                        // Handle update_params action
+                        else if (command.action === 'update_params' && command.params) {
+                            setState(prev => {
+                                const next = { ...prev };
+                                const p = command.params;
+
+                                if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
+                                if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
+                                if (p.speed !== undefined) next.speed = p.speed;
+
+                                // Recalculate ratio if teeth changed
+                                if (p.gear1?.toothCount || p.gear2?.toothCount) {
+                                    next.ratio = next.gear2.toothCount / next.gear1.toothCount;
+                                }
+
+                                return next;
+                            });
+                            actionExecuted = true;
                         }
                     }
-                    // Handle download_svg action
-                    else if (command.action === 'download_svg' && command.gear) {
-                        const gearIndex = command.gear === 'blue' ? 1 : 2;
-                        onDownload(gearIndex);
-                        onSendMessage(command.message || `Alles klar, lade dir das ${command.gear === 'blue' ? 'blaue' : 'rote'} Zahnrad runter 👍`, 'model');
-                    }
-                    // Handle toggle_animation action
-                    else if (command.action === 'toggle_animation' && command.playing !== undefined) {
-                        setState(prev => ({ ...prev, isPlaying: command.playing }));
-                        onSendMessage(command.message || `Animation ${command.playing ? 'gestartet' : 'gestoppt'}.`, 'model');
-                    }
-                    // Handle update_params action
-                    else if (command.action === 'update_params' && command.params) {
-                        setState(prev => {
-                            const next = { ...prev };
-                            const p = command.params;
 
-                            if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
-                            if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
-                            if (p.speed !== undefined) next.speed = p.speed;
-
-                            // Recalculate ratio if teeth changed
-                            if (p.gear1?.toothCount || p.gear2?.toothCount) {
-                                next.ratio = next.gear2.toothCount / next.gear1.toothCount;
-                            }
-
-                            return next;
-                        });
-
-                        onSendMessage(command.message || "Parameter aktualisiert.", 'model');
-                    } else {
-                        console.log("⚠️ JSON found but action unknown or params missing");
+                    // Show message if any action was executed
+                    if (actionExecuted && messageToShow) {
+                        onSendMessage(messageToShow, 'model');
+                    } else if (!actionExecuted) {
+                        console.log("⚠️ JSON found but no valid actions executed");
                         onSendMessage(responseText, 'model');
                     }
+
                 } catch (e) {
                     console.error("❌ Failed to parse AI JSON:", e);
                     onSendMessage(responseText, 'model');
