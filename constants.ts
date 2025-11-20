@@ -96,6 +96,7 @@ WICHTIG: Speed muss mindestens 3 sein (kleiner als 3 ist nicht erlaubt). Speed-B
   "message": "Deine normale Antwort"
 }
 Beispiele für Namen: "Zahnrad SVG Download", "20 Zähne einstellen", "Modul Hilfe". Basier den Namen darauf, was der User will.
+**WICHTIG: Chat-Titel maximal 40 Zeichen!**
 
 5. **Fragen beantworten** – Wenn jemand was zu Zahnrädern oder Mechanik wissen will:
 {
