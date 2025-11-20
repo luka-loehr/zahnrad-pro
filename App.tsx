@@ -274,7 +274,6 @@ const App: React.FC = () => {
         chats={chatList.chats}
         currentChatId={chatList.currentChatId}
         onClose={() => setSidebarOpen(false)}
-        onNewChat={createNewChat}
         onSwitchChat={switchChat}
         onDeleteChat={deleteChat}
       />
@@ -288,6 +287,7 @@ const App: React.FC = () => {
         onSendMessage={handleSendMessage}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onChatNamed={(name) => updateChatName(currentChat.id, name)}
+        onNewChat={createNewChat}
       />
       <GearCanvas state={state} id="gear-canvas-main" />
     </div>

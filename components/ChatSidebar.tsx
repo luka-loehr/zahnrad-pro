@@ -1,13 +1,12 @@
 import React from 'react';
 import { ChatSession } from '../types';
-import { MessageSquare, Trash2, Plus, X } from 'lucide-react';
+import { MessageSquare, Trash2, X } from 'lucide-react';
 
 interface ChatSidebarProps {
     open: boolean;
     chats: ChatSession[];
     currentChatId: string;
     onClose: () => void;
-    onNewChat: () => void;
     onSwitchChat: (id: string) => void;
     onDeleteChat: (id: string) => void;
 }
@@ -17,7 +16,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     chats,
     currentChatId,
     onClose,
-    onNewChat,
     onSwitchChat,
     onDeleteChat
 }) => {
@@ -75,19 +73,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     </button>
                 </div>
 
-                {/* New Chat Button */}
-                <div className="p-4">
-                    <button
-                        onClick={() => {
-                            onNewChat();
-                            onClose();
-                        }}
-                        className="w-full flex items-center justify-center gap-2 p-3 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-lg font-medium transition-colors"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Neuer Chat
-                    </button>
-                </div>
 
                 {/* Chat List */}
                 <div className="flex-1 overflow-y-auto px-2" style={{ WebkitOverflowScrolling: 'touch' }}>

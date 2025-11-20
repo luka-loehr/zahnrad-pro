@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GearSystemState, ChatMessage } from '../types';
-import { MessageSquare, Send, AlertCircle, Menu, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, AlertCircle, Menu, Loader2, Plus } from 'lucide-react';
 import { streamMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
 
@@ -14,6 +14,7 @@ interface AIChatProps {
     onSendMessage: (message: string, role?: 'user' | 'model', isError?: boolean) => void;
     onToggleSidebar: () => void;
     onChatNamed: (name: string) => void;
+    onNewChat: () => void;
 }
 
 const AIChat: React.FC<AIChatProps> = ({
@@ -25,7 +26,8 @@ const AIChat: React.FC<AIChatProps> = ({
     chatName,
     onSendMessage,
     onToggleSidebar,
-    onChatNamed
+    onChatNamed,
+    onNewChat
 }) => {
     const [chatInput, setChatInput] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
@@ -171,6 +173,13 @@ const AIChat: React.FC<AIChatProps> = ({
                         {chatName}
                     </h1>
                 </div>
+                <button
+                    onClick={onNewChat}
+                    className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    title="Neuer Chat"
+                >
+                    <Plus className="w-5 h-5" />
+                </button>
             </div>
 
             {/* Chat Messages */}
