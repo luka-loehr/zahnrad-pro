@@ -12,7 +12,7 @@ const MAX_CHATS = 50;
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
   role: 'model',
-  text: `Yo! 👋 Willkommen bei GearGen Pro
+  text: `Yo! 👋 Willkommen bei ZahnradPro
 
 Ich bin dein KI-Assistent für Zahnräder. Links hast du ein **blaues** Zahnrad, rechts ein **rotes** – die Farben sind fix, aber alles andere kannst du ändern.
 
@@ -206,7 +206,7 @@ const App: React.FC = () => {
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}mm" height="${size}mm">
-  <!-- GearGen Pro Export -->
+  <!-- ZahnradPro Export -->
   <!-- Outer Diameter: ${outerDiameterMm.toFixed(2)}mm (${(outerDiameterMm / 10).toFixed(2)}cm) -->
   <!-- Role: ${gear.role}, Module: ${gear.module}mm, Teeth: ${gear.toothCount} -->
   <!-- Pressure Angle: ${gear.pressureAngle}°, Center Hole: ${gear.centerHoleDiameter}mm -->
@@ -250,7 +250,7 @@ const App: React.FC = () => {
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" width="${viewBoxWidth}mm" height="${viewBoxHeight}mm">
-  <!-- GearGen Pro Export - Both Gears (Separated for Laser Cutting) -->
+  <!-- ZahnradPro Export - Both Gears (Separated for Laser Cutting) -->
   <!-- Blue Gear (Gear 1): ${(diameter1Mm / 10).toFixed(2)}cm, ${state.gear1.toothCount} teeth, ${state.gear1.role} -->
   <!-- Red Gear (Gear 2): ${(diameter2Mm / 10).toFixed(2)}cm, ${state.gear2.toothCount} teeth, ${state.gear2.role} -->
   <!-- Gap Between Gears: ${gapBetweenGears}mm (for laser cutting) -->

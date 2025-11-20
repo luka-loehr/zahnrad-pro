@@ -217,30 +217,37 @@ const AIChat: React.FC<AIChatProps> = ({
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-slate-900 border-t border-slate-700">
-                {process.env.API_KEY ? (
-                    <form onSubmit={handleAiSubmit} className="flex gap-2">
-                        <input
-                            type="text"
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            placeholder="Frage nach Parametern, SVG-Downloads, oder starte die Animation..."
-                            className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-brand-500 outline-none"
-                        />
-                        <button
-                            type="submit"
-                            disabled={isAiLoading}
-                            className="bg-brand-600 p-2 rounded text-white hover:bg-brand-500 disabled:opacity-50 active:bg-brand-700 transition-colors"
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </form>
-                ) : (
-                    <div className="flex items-center gap-2 text-yellow-500 text-xs p-2 bg-yellow-900/20 border border-yellow-900 rounded">
-                        <AlertCircle className="w-4 h-4" />
-                        <span>API-Schlüssel fehlt in der Umgebungsvariable. Assistent deaktiviert.</span>
-                    </div>
-                )}
+            <div className="bg-slate-900 border-t border-slate-700">
+                <div className="p-4">
+                    {process.env.API_KEY ? (
+                        <>
+                            <form onSubmit={handleAiSubmit} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    placeholder="Frag mich alles..."
+                                    className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-brand-500 outline-none"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={isAiLoading}
+                                    className="bg-brand-600 p-2 rounded text-white hover:bg-brand-500 disabled:opacity-50 active:bg-brand-700 transition-colors"
+                                >
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </form>
+                            <p className="text-xs text-slate-500 mt-2 text-center">
+                                ZahnradPro kann Fehler machen. Überprüfe wichtige Informationen.
+                            </p>
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-2 text-yellow-500 text-xs p-2 bg-yellow-900/20 border border-yellow-900 rounded">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>API-Schlüssel fehlt in der Umgebungsvariable. Assistent deaktiviert.</span>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
