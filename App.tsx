@@ -193,20 +193,31 @@ const App: React.FC = () => {
   const handleDownload = (gearIdx: 1 | 2) => {
     const gear = gearIdx === 1 ? state.gear1 : state.gear2;
     const pathData = generateGearPath(gear);
-    
-    // Use exact outer diameter from configuration (convert cm to mm for SVG)
-    const outerDiameterMm = gear.outerDiameterCm * 10;
-    const size = outerDiameterMm * state.svgScale; // Apply SVG scale
+
+    // Calculate the actual outer diameter in mm based on gear math
+    // Outer Diameter = Module * ToothCount + 2 * Addendum
+    // Addendum = Module * (1 + profileShift)
+    const addendum = gear.module * (1 + gear.profileShift);
+    const pitchDiameter = gear.module * gear.toothCount;
+    const outerDiameterMm = pitchDiameter + (2 * addendum);
+
+    // Apply SVG scale if needed
+    const size = outerDiameterMm * state.svgScale;
     const offset = size / 2;
+
+    // Calculate the scale factor to match path coordinates to viewBox
+    // The path is generated in mm units based on module and tooth count
+    const pathOuterRadius = pitchDiameter / 2 + addendum;
+    const scaleToViewBox = (size / 2) / pathOuterRadius;
 
     const svgContent = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}mm" height="${size}mm">
   <!-- GearGen Pro Export -->
-  <!-- Role: ${gear.role}, Outer Diameter: ${gear.outerDiameterCm}cm, Radius: ${gear.radiusCm}cm -->
-  <!-- Module: ${gear.module}mm, Teeth: ${gear.toothCount}, Pressure Angle: ${gear.pressureAngle}° -->
-  <!-- Center Hole Diameter: ${gear.centerHoleDiameter}mm -->
+  <!-- Outer Diameter: ${outerDiameterMm.toFixed(2)}mm (${(outerDiameterMm / 10).toFixed(2)}cm) -->
+  <!-- Role: ${gear.role}, Module: ${gear.module}mm, Teeth: ${gear.toothCount} -->
+  <!-- Pressure Angle: ${gear.pressureAngle}°, Center Hole: ${gear.centerHoleDiameter}mm -->
   <!-- Ratio: ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount}) -->
-  <path d="${pathData}" fill="none" stroke="black" stroke-width="1" transform="translate(${offset}, ${offset})"/>
+  <path d="${pathData}" fill="none" stroke="black" stroke-width="0.5" transform="translate(${offset}, ${offset}) scale(${scaleToViewBox})"/>
 </svg>`.trim();
 
     const gearName = gearIdx === 1 ? 'Blaues_Zahnrad' : 'Rotes_Zahnrad';

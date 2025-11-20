@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { GearSystemState } from '../types';
 import { generateGearPath, calculateCenterDistance } from '../utils/gearMath';
-import { Maximize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface GearCanvasProps {
   state: GearSystemState;
@@ -55,17 +55,14 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           g1Ref.current.setAttribute('transform', `rotate(${rotationRef.current.r1 % 360})`);
         }
         if (g2Ref.current) {
-          // Gear 2 is offset by centerDist on X axis
-          // To rotate it around its own center (centerDist, 0), we need:
-          // translate(centerDist, 0) rotate(angle)
-          // However, inside the group we usually place the path centered at 0,0 then move the group.
-          // Let's handle the group positioning in the parent SVG, and rotation here.
-          g2Ref.current.setAttribute('transform', `translate(${centerDist}, 0) rotate(${rotationRef.current.r2 % 360})`);
+          // Gear 2 is already offset by the parent group transform
+          // So we only need to rotate it around its center (0,0 in local space)
+          g2Ref.current.setAttribute('transform', `rotate(${rotationRef.current.r2 % 360})`);
         }
       } else {
         // Even if not playing, we need to update position if centerDist changes
         if (g2Ref.current) {
-          g2Ref.current.setAttribute('transform', `translate(${centerDist}, 0) rotate(${rotationRef.current.r2 % 360})`);
+          g2Ref.current.setAttribute('transform', `rotate(${rotationRef.current.r2 % 360})`);
         }
         if (g1Ref.current) {
           g1Ref.current.setAttribute('transform', `rotate(${rotationRef.current.r1 % 360})`);
@@ -299,7 +296,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   return (
     <div
-      className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex items-center justify-center cursor-move touch-none min-h-[400px] md:min-h-screen"
+      className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800 to-slate-950 relative overflow-hidden flex flex-col items-center justify-center cursor-move touch-none min-h-[400px] md:min-h-screen"
       id={id}
       ref={containerRef}
       onMouseDown={handleMouseDown}
@@ -311,6 +308,45 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
       onTouchEnd={handleTouchEnd}
       style={{ touchAction: 'none' }}
     >
+      {/* Top Info Bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex flex-wrap justify-center md:justify-between items-start gap-4 bg-gradient-to-b from-slate-950/90 via-slate-900/50 to-transparent pointer-events-none">
+
+        {/* Gear 1 Info (Left) */}
+        <div className="bg-slate-900/60 backdrop-blur-md p-3 rounded-xl border border-sky-500/30 shadow-lg flex flex-col gap-1 min-w-[140px]">
+          <div className="flex items-center gap-2 text-sky-400 font-bold text-sm uppercase tracking-wider">
+            <div className="w-2 h-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]"></div>
+            {state.gear1.role === 'antrieb' ? 'Antrieb' : 'Abtrieb'}
+          </div>
+          <div className="text-xs text-slate-300 font-mono space-y-1">
+            <div className="flex justify-between"><span>Zähne:</span> <span className="text-white">{state.gear1.toothCount}</span></div>
+            <div className="flex justify-between"><span>Ø:</span> <span className="text-white">{state.gear1.outerDiameterCm}cm</span></div>
+            <div className="flex justify-between"><span>Bohrung:</span> <span className="text-white">{state.gear1.centerHoleDiameter}mm</span></div>
+          </div>
+        </div>
+
+        {/* System Info (Center) */}
+        <div className="bg-slate-900/60 backdrop-blur-md p-3 rounded-xl border border-slate-700/50 shadow-lg flex flex-col gap-1 min-w-[140px]">
+          <div className="text-slate-400 font-bold text-xs uppercase tracking-wider text-center mb-1">System</div>
+          <div className="text-xs text-slate-300 font-mono space-y-1">
+            <div className="flex justify-between"><span>Ratio:</span> <span className="text-white font-bold">{state.ratio.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span>Abstand:</span> <span className="text-white">{centerDist.toFixed(2)}mm</span></div>
+            <div className="flex justify-between"><span>Modul:</span> <span className="text-white">{state.gear1.module}</span></div>
+          </div>
+        </div>
+
+        {/* Gear 2 Info (Right) */}
+        <div className="bg-slate-900/60 backdrop-blur-md p-3 rounded-xl border border-rose-500/30 shadow-lg flex flex-col gap-1 min-w-[140px]">
+          <div className="flex items-center gap-2 text-rose-400 font-bold text-sm uppercase tracking-wider justify-end">
+            {state.gear2.role === 'antrieb' ? 'Antrieb' : 'Abtrieb'}
+            <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></div>
+          </div>
+          <div className="text-xs text-slate-300 font-mono space-y-1 text-right">
+            <div className="flex justify-between"><span>Zähne:</span> <span className="text-white">{state.gear2.toothCount}</span></div>
+            <div className="flex justify-between"><span>Ø:</span> <span className="text-white">{state.gear2.outerDiameterCm}cm</span></div>
+            <div className="flex justify-between"><span>Bohrung:</span> <span className="text-white">{state.gear2.centerHoleDiameter}mm</span></div>
+          </div>
+        </div>
+      </div>
 
       {/* Grid / Background visual aids */}
       <div className="absolute inset-0 opacity-10 pointer-events-none"
@@ -323,72 +359,39 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
         preserveAspectRatio="xMidYMid meet"
       >
         <g transform={`scale(${transform.scale}) translate(${transform.x}, ${transform.y})`}>
-          {/* Gear 1 */}
-          <g ref={g1Ref}>
-            <path
-              d={gear1Path}
-              fill={state.gear1.color}
-              stroke="rgba(255,255,255,0.2)"
-              strokeWidth={state.gear1.module * 0.1}
-            />
-            {/* Decorator: Pitch Circle */}
-            <circle r={(state.gear1.module * state.gear1.toothCount) / 2} fill="none" stroke="white" strokeOpacity="0.1" strokeDasharray="1 1" />
+
+          {/* Gear 1 Group */}
+          <g>
+            {/* Visual Gear */}
+            <g ref={g1Ref}>
+              <path
+                d={gear1Path}
+                fill={state.gear1.color}
+                stroke="rgba(255,255,255,0.2)"
+                strokeWidth={state.gear1.module * 0.1}
+              />
+              <circle r={(state.gear1.module * state.gear1.toothCount) / 2} fill="none" stroke="white" strokeOpacity="0.1" strokeDasharray="1 1" />
+            </g>
           </g>
 
-          {/* Gear 2 */}
-          <g ref={g2Ref}>
-            <path
-              d={gear2Path}
-              fill={state.gear2.color}
-              stroke="rgba(255,255,255,0.2)"
-              strokeWidth={state.gear2.module * 0.1}
-            />
-            <circle r={(state.gear2.module * state.gear2.toothCount) / 2} fill="none" stroke="white" strokeOpacity="0.1" strokeDasharray="1 1" />
-          </g>
-
-          {/* Gear 1 Annotations */}
-          <g transform={`translate(0, ${-maxDiameter / 2.5})`}>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 35} className="font-mono opacity-80" fontWeight="bold">
-              {state.gear1.role === 'antrieb' ? '⚙️ Antrieb' : '⚙️ Abtrieb'} (Blau)
-            </text>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="1.2em">
-              Ø: {state.gear1.outerDiameterCm}cm | R: {state.gear1.radiusCm}cm
-            </text>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="2.4em">
-              Bohrung: {state.gear1.centerHoleDiameter}mm | Zähne: {state.gear1.toothCount}
-            </text>
-          </g>
-
-          {/* Gear 2 Annotations */}
-          <g transform={`translate(${centerDist}, ${-maxDiameter / 2.5})`}>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 35} className="font-mono opacity-80" fontWeight="bold">
-              {state.gear2.role === 'antrieb' ? '⚙️ Antrieb' : '⚙️ Abtrieb'} (Rot)
-            </text>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="1.2em">
-              Ø: {state.gear2.outerDiameterCm}cm | R: {state.gear2.radiusCm}cm
-            </text>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-70" dy="2.4em">
-              Bohrung: {state.gear2.centerHoleDiameter}mm | Zähne: {state.gear2.toothCount}
-            </text>
-          </g>
-
-          {/* Center Info */}
-          <g transform={`translate(${centerDist / 2}, ${maxDiameter / 3})`}>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 30} className="font-mono opacity-70">
-              Ratio: {state.ratio.toFixed(2)} ({state.gear2.toothCount}:{state.gear1.toothCount})
-            </text>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 35} className="font-mono opacity-60" dy="1.2em">
-              Achsabstand: {centerDist.toFixed(2)}mm
-            </text>
-            <text textAnchor="middle" fill="white" fontSize={maxDiameter / 40} className="font-mono opacity-50" dy="2.4em">
-              1 Kachel = {state.rendererScale} {state.unit}
-            </text>
+          {/* Gear 2 Group */}
+          <g transform={`translate(${centerDist}, 0)`}>
+            {/* Visual Gear */}
+            <g ref={g2Ref}>
+              <path
+                d={gear2Path}
+                fill={state.gear2.color}
+                stroke="rgba(255,255,255,0.2)"
+                strokeWidth={state.gear2.module * 0.1}
+              />
+              <circle r={(state.gear2.module * state.gear2.toothCount) / 2} fill="none" stroke="white" strokeOpacity="0.1" strokeDasharray="1 1" />
+            </g>
           </g>
         </g>
       </svg>
 
       {/* Controls Overlay */}
-      <div className="absolute bottom-4 left-4 md:right-4 md:left-auto flex flex-col gap-2 items-start md:items-end pointer-events-none">
+      <div className="absolute bottom-4 left-4 md:right-4 md:left-auto flex flex-col gap-2 items-start md:items-end pointer-events-none z-20">
         <div className="flex gap-2 pointer-events-auto">
           <button onClick={() => setTransform(t => ({ ...t, scale: t.scale * 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom In">
             <ZoomIn className="w-6 h-6 md:w-5 md:h-5" />
