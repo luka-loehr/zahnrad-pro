@@ -46,8 +46,7 @@ const ACTION_RESPONSE_SCHEMA = {
             properties: {
               toothCount: { type: Type.NUMBER, nullable: true },
               module: { type: Type.NUMBER, nullable: true },
-              centerHoleDiameter: { type: Type.NUMBER, nullable: true },
-              role: { type: Type.STRING, enum: ['antrieb', 'abtrieb'], nullable: true }
+              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
             }
           },
           gear2: {
@@ -56,8 +55,7 @@ const ACTION_RESPONSE_SCHEMA = {
             properties: {
               toothCount: { type: Type.NUMBER, nullable: true },
               module: { type: Type.NUMBER, nullable: true },
-              centerHoleDiameter: { type: Type.NUMBER, nullable: true },
-              role: { type: Type.STRING, enum: ['antrieb', 'abtrieb'], nullable: true }
+              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
             }
           },
         }

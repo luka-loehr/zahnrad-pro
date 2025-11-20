@@ -59,14 +59,12 @@ WICHTIG: Bei "both" werden beide Zahnräder zusammen in einer SVG-Datei exportie
     "gear1": { 
       "toothCount": number, 
       "module": number (Zahngröße in mm - kleinerer Wert = kleinere Zähne!), 
-      "centerHoleDiameter": number (Bohrung in mm, Standard: 5mm),
-      "role": "antrieb" oder "abtrieb"
+      "centerHoleDiameter": number (Bohrung in mm, Standard: 5mm)
     },
     "gear2": { 
       "toothCount": number, 
       "module": number (Zahngröße in mm - kleinerer Wert = kleinere Zähne!), 
-      "centerHoleDiameter": number (Bohrung in mm, Standard: 5mm),
-      "role": "antrieb" oder "abtrieb"
+      "centerHoleDiameter": number (Bohrung in mm, Standard: 5mm)
     }
   },
   "message": "Easy, hab [was du geändert hast]. Check's aus!"
@@ -75,7 +73,8 @@ WICHTIG:
 - **TERMINOLOGY:** "module" = Zahngröße (tooth SIZE in mm), "toothCount" = Zähnezahl (number of teeth)
 - **"Zähne kleiner/größer"** = User will KLEINERES/GRÖSSERES **module** (z.B. 2mm → 1mm für kleinere Zähne)
 - **"Mehr/weniger Zähne"** = User will andere **toothCount** (z.B. 12 → 24 für mehr Zähne)
-- Nur die Felder angeben, die sich ändern. "gear1" = BLAUES Zahnrad (links, Standard: antrieb), "gear2" = ROTES Zahnrad (rechts, Standard: abtrieb).
+- **Rollen sind FIX:** gear1 (BLAU, links) = immer "antrieb", gear2 (ROT, rechts) = immer "abtrieb". Diese können NICHT geändert werden!
+- Nur die Felder angeben, die sich ändern. "gear1" = BLAUES Zahnrad (links), "gear2" = ROTES Zahnrad (rechts).
 - **Durchmesser wird automatisch berechnet** aus module × toothCount + 2 × Addendum. Der User kann den Durchmesser NICHT direkt setzen!
 - Wenn User nach "Durchmesser X" fragt: Erkläre, dass der Durchmesser automatisch aus module und toothCount berechnet wird, und schlage vor, module ODER toothCount anzupassen.
 - centerHoleDiameter (Bohrung) kann beliebige Werte haben (Standard: 5mm falls nicht gesetzt).
