@@ -33,6 +33,7 @@ const AIChat: React.FC<AIChatProps> = ({
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [streamingMessage, setStreamingMessage] = useState('');
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
+    const inputRef = React.useRef<HTMLInputElement>(null);
 
     const handleAiSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -224,9 +225,16 @@ const AIChat: React.FC<AIChatProps> = ({
                         <>
                             <form onSubmit={handleAiSubmit} className="flex gap-2">
                                 <input
+                                    ref={inputRef}
                                     type="text"
                                     value={chatInput}
                                     onChange={(e) => setChatInput(e.target.value)}
+                                    onFocus={() => {
+                                        // Scroll input into view when keyboard opens (mobile)
+                                        setTimeout(() => {
+                                            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                        }, 300);
+                                    }}
                                     placeholder="Frag mich alles..."
                                     className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-brand-500 outline-none"
                                 />
