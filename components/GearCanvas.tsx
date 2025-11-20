@@ -32,6 +32,23 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   const centerDist = useMemo(() => calculateCenterDistance(state.gear1, state.gear2), [state.gear1, state.gear2]);
 
+  // Calculate scale factors to match user-specified diameters
+  const gear1Scale = useMemo(() => {
+    const addendum = state.gear1.module * (1 + state.gear1.profileShift);
+    const pitchDiameter = state.gear1.module * state.gear1.toothCount;
+    const geometricDiameter = pitchDiameter + (2 * addendum);
+    const userDiameterMm = state.gear1.outerDiameterCm * 10;
+    return userDiameterMm / geometricDiameter;
+  }, [state.gear1.module, state.gear1.toothCount, state.gear1.profileShift, state.gear1.outerDiameterCm]);
+
+  const gear2Scale = useMemo(() => {
+    const addendum = state.gear2.module * (1 + state.gear2.profileShift);
+    const pitchDiameter = state.gear2.module * state.gear2.toothCount;
+    const geometricDiameter = pitchDiameter + (2 * addendum);
+    const userDiameterMm = state.gear2.outerDiameterCm * 10;
+    return userDiameterMm / geometricDiameter;
+  }, [state.gear2.module, state.gear2.toothCount, state.gear2.profileShift, state.gear2.outerDiameterCm]);
+
   // 2. Animation Loop
   const animate = (time: number) => {
     if (previousTimeRef.current !== undefined) {
@@ -361,7 +378,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
         <g transform={`scale(${transform.scale}) translate(${transform.x}, ${transform.y})`}>
 
           {/* Gear 1 Group */}
-          <g>
+          <g transform={`scale(${gear1Scale})`}>
             {/* Visual Gear */}
             <g ref={g1Ref}>
               <path
@@ -375,7 +392,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           </g>
 
           {/* Gear 2 Group */}
-          <g transform={`translate(${centerDist}, 0)`}>
+          <g transform={`translate(${centerDist}, 0) scale(${gear2Scale})`}>
             {/* Visual Gear */}
             <g ref={g2Ref}>
               <path
