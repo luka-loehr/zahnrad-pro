@@ -65,10 +65,11 @@ const ACTION_RESPONSE_SCHEMA = {
   }
 };
 
-// Generate status string with current gear parameters
+// Generate compact status string for current state
 const getStatusString = (state: GearSystemState): string => {
-  return `Blau (Antrieb): ${state.gear1.toothCount} Zähne, Modul ${state.gear1.module}mm, Bohrung ${state.gear1.centerHoleDiameter}mm
-Rot (Abtrieb): ${state.gear2.toothCount} Zähne, Modul ${state.gear2.module}mm, Bohrung ${state.gear2.centerHoleDiameter}mm
+  return `**AKTUELLE WERTE:**
+Blau: ${state.gear1.toothCount} Zähne, ${state.gear1.module}mm Modul, ${state.gear1.centerHoleDiameter}mm Bohrung
+Rot: ${state.gear2.toothCount} Zähne, ${state.gear2.module}mm Modul, ${state.gear2.centerHoleDiameter}mm Bohrung
 Übersetzung: ${state.ratio.toFixed(2)}, Geschwindigkeit: ${state.speed} U/min`;
 };
 
@@ -92,10 +93,10 @@ export async function* streamMessageToGemini(
     parts: [{ text: msg.text }]
   }));
 
-  // Always add current state if provided (replace placeholder in system prompt)
+  // Always add current state if provided (compact status as footer)
   const systemPrompt = currentState
-    ? SYSTEM_PROMPT.replace('{{CURRENT_GEAR_PARAMS}}', getStatusString(currentState))
-    : SYSTEM_PROMPT.replace('{{CURRENT_GEAR_PARAMS}}', 'Keine aktuellen Parameter verfügbar');
+    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
+    : SYSTEM_PROMPT;
 
   const payload = {
     model: MODEL_ID,
@@ -168,10 +169,10 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
     parts: [{ text: msg.text }]
   }));
 
-  // Always add current state if provided (replace placeholder in system prompt)
+  // Always add current state if provided (compact status as footer)
   const systemPrompt = currentState
-    ? SYSTEM_PROMPT.replace('{{CURRENT_GEAR_PARAMS}}', getStatusString(currentState))
-    : SYSTEM_PROMPT.replace('{{CURRENT_GEAR_PARAMS}}', 'Keine aktuellen Parameter verfügbar');
+    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
+    : SYSTEM_PROMPT;
 
   const payload = {
     model: MODEL_ID,

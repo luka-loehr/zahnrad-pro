@@ -51,7 +51,9 @@ const AIChat: React.FC<AIChatProps> = ({
             let fullResponse = '';
 
             // Stream the response (now guaranteed to be valid JSON)
-            for await (const chunk of streamMessageToGemini(userMsg, messages)) {
+            // Pass state only on first user message (when only welcome message exists)
+            const isFirstUserMessage = messages.length === 1;
+            for await (const chunk of streamMessageToGemini(userMsg, messages, isFirstUserMessage ? state : undefined)) {
                 fullResponse += chunk;
                 setStreamingMessage(fullResponse);
             }
@@ -127,32 +129,6 @@ const AIChat: React.FC<AIChatProps> = ({
                 }
                 // Handle respond action (pure conversational response)
                 // No additional action needed, just the message
-                // Handle getParams action - return current parameters
-                else if (command.action === 'getParams') {
-                    // Create a detailed parameter response
-                    const paramsResponse = {
-                        gear1: {
-                            toothCount: state.gear1.toothCount,
-                            module: state.gear1.module,
-                            centerHoleDiameter: state.gear1.centerHoleDiameter
-                        },
-                        gear2: {
-                            toothCount: state.gear2.toothCount,
-                            module: state.gear2.module,
-                            centerHoleDiameter: state.gear2.centerHoleDiameter
-                        },
-                        speed: state.speed,
-                        ratio: state.ratio,
-                        rendererScale: state.rendererScale,
-                        svgScale: state.svgScale
-                    };
-
-                    console.log('📊 getParams requested, returning:', paramsResponse);
-
-                    // Add the parameters as a system message for the AI to process
-                    // The AI will include these in its next message
-                    messageToShow = (messageToShow || '') + '\n\n```json\n' + JSON.stringify(paramsResponse, null, 2) + '\n```';
-                }
             }
 
             // Clear streaming message and show final message
