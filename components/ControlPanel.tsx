@@ -79,7 +79,44 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ state, setState, onDownload
 
         try {
             const responseText = await sendMessageToGemini(userMsg);
-            setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+
+            // Try to find JSON in the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
+            if (jsonMatch) {
+                try {
+                    const command = JSON.parse(jsonMatch[0]);
+
+                    if (command.action === 'update_params' && command.params) {
+                        setState(prev => {
+                            const next = { ...prev };
+                            const p = command.params;
+
+                            if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
+                            if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
+                            if (p.speed !== undefined) next.speed = p.speed;
+
+                            // Recalculate ratio if teeth changed
+                            if (p.gear1?.toothCount || p.gear2?.toothCount) {
+                                next.ratio = next.gear2.toothCount / next.gear1.toothCount;
+                            }
+
+                            return next;
+                        });
+
+                        setChatHistory(prev => [...prev, { role: 'model', text: command.message || "Parameter aktualisiert." }]);
+                    } else {
+                        // JSON found but not an action we know, just show text
+                        setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse AI JSON", e);
+                    setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+                }
+            } else {
+                setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+            }
+
         } catch (error) {
             setChatHistory(prev => [...prev, { role: 'model', text: 'Fehler: Verbindung zur KI nicht möglich. Prüfen Sie den API-Schlüssel.', isError: true }]);
         } finally {
