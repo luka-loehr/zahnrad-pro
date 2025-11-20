@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GearSystemState, ChatMessage } from '../types';
-import { MessageSquare, Send, AlertCircle, Menu } from 'lucide-react';
+import { MessageSquare, Send, AlertCircle, Menu, Loader2 } from 'lucide-react';
 import { streamMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
 
@@ -10,7 +10,7 @@ interface AIChatProps {
     onDownload: (gearIndex: 1 | 2) => void;
     messages: ChatMessage[];
     chatName: string;
-    onSendMessage: (message: string) => void;
+    onSendMessage: (message: string, role?: 'user' | 'model', isError?: boolean) => void;
     onToggleSidebar: () => void;
     onChatNamed: (name: string) => void;
 }
@@ -196,7 +196,10 @@ const AIChat: React.FC<AIChatProps> = ({
                             {streamingMessage ? (
                                 <MarkdownText text={streamingMessage} />
                             ) : (
-                                <span className="text-slate-400 italic animate-pulse">Denke nach...</span>
+                                <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Denke nach...</span>
+                                </div>
                             )}
                         </div>
                     </div>

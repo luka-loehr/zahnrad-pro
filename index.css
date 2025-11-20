@@ -14,3 +14,20 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Slow pulsating animation for AI thinking state */
+@keyframes slow-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-slow-pulse {
+  animation: slow-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
