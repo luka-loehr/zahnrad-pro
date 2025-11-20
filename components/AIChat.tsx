@@ -105,21 +105,6 @@ const AIChat: React.FC<AIChatProps> = ({
 
                             const updated = { ...gear, ...updates };
 
-                            // Handle diameter and radius (no limits - user decides)
-                            if (updates.outerDiameterCm !== undefined) {
-                                updated.outerDiameterCm = updates.outerDiameterCm;
-                                // Automatically calculate radiusCm
-                                updated.radiusCm = updated.outerDiameterCm / 2;
-                            } else if (updates.radiusCm !== undefined) {
-                                // If radius is given, convert to diameter
-                                const diameter = updates.radiusCm * 2;
-                                updated.outerDiameterCm = diameter;
-                                updated.radiusCm = updated.outerDiameterCm / 2;
-                            } else if (updates.outerDiameterCm === undefined && updates.radiusCm === undefined) {
-                                // Ensure radiusCm is always in sync
-                                updated.radiusCm = updated.outerDiameterCm / 2;
-                            }
-
                             // Default centerHoleDiameter if not set
                             if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
                                 updated.centerHoleDiameter = 10; // mm

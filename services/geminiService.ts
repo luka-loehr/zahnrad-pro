@@ -47,8 +47,6 @@ const ACTION_RESPONSE_SCHEMA = {
               toothCount: { type: Type.NUMBER, nullable: true },
               module: { type: Type.NUMBER, nullable: true },
               centerHoleDiameter: { type: Type.NUMBER, nullable: true },
-              outerDiameterCm: { type: Type.NUMBER, nullable: true },
-              radiusCm: { type: Type.NUMBER, nullable: true },
               role: { type: Type.STRING, enum: ['antrieb', 'abtrieb'], nullable: true }
             }
           },
@@ -59,8 +57,6 @@ const ACTION_RESPONSE_SCHEMA = {
               toothCount: { type: Type.NUMBER, nullable: true },
               module: { type: Type.NUMBER, nullable: true },
               centerHoleDiameter: { type: Type.NUMBER, nullable: true },
-              outerDiameterCm: { type: Type.NUMBER, nullable: true },
-              radiusCm: { type: Type.NUMBER, nullable: true },
               role: { type: Type.STRING, enum: ['antrieb', 'abtrieb'], nullable: true }
             }
           },
@@ -85,8 +81,7 @@ const getStatusString = (state: GearSystemState): string => {
 - **Rolle:** ${state.gear1.role}
 - **Zähnezahl:** ${state.gear1.toothCount}
 - **Modul:** ${state.gear1.module} mm
-- **Äußerer Durchmesser:** ${state.gear1.outerDiameterCm} cm
-- **Radius:** ${state.gear1.radiusCm} cm
+- **Äußerer Durchmesser:** ${((state.gear1.module * state.gear1.toothCount + 2 * state.gear1.module * (1 + state.gear1.profileShift)) / 10).toFixed(2)} cm (berechnet aus Modul × Zähne)
 - **Bohrungsdurchmesser:** ${state.gear1.centerHoleDiameter} mm
 - **Farbe:** Blau
 
@@ -94,8 +89,7 @@ const getStatusString = (state: GearSystemState): string => {
 - **Rolle:** ${state.gear2.role}
 - **Zähnezahl:** ${state.gear2.toothCount}
 - **Modul:** ${state.gear2.module} mm
-- **Äußerer Durchmesser:** ${state.gear2.outerDiameterCm} cm
-- **Radius:** ${state.gear2.radiusCm} cm
+- **Äußerer Durchmesser:** ${((state.gear2.module * state.gear2.toothCount + 2 * state.gear2.module * (1 + state.gear2.profileShift)) / 10).toFixed(2)} cm (berechnet aus Modul × Zähne)
 - **Bohrungsdurchmesser:** ${state.gear2.centerHoleDiameter} mm
 - **Farbe:** Rot
 
@@ -104,7 +98,7 @@ const getStatusString = (state: GearSystemState): string => {
 - **Achsabstand:** ${state.distance.toFixed(2)} mm
 
 **WICHTIGE REGELN:**
-- radiusCm = outerDiameterCm / 2 (automatisch berechnet)
+- Durchmesser wird automatisch berechnet: Ø = Modul × Zähne + 2 × Addendum
 - centerHoleDiameter Standard: 10mm (falls nicht gesetzt)
 - Übersetzungsverhältnis: ratio = teethCount_right / teethCount_left`;
 };

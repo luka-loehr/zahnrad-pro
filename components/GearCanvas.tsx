@@ -32,23 +32,6 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   const centerDist = useMemo(() => calculateCenterDistance(state.gear1, state.gear2), [state.gear1, state.gear2]);
 
-  // Calculate scale factors to match user-specified diameters
-  const gear1Scale = useMemo(() => {
-    const addendum = state.gear1.module * (1 + state.gear1.profileShift);
-    const pitchDiameter = state.gear1.module * state.gear1.toothCount;
-    const geometricDiameter = pitchDiameter + (2 * addendum);
-    const userDiameterMm = state.gear1.outerDiameterCm * 10;
-    return userDiameterMm / geometricDiameter;
-  }, [state.gear1.module, state.gear1.toothCount, state.gear1.profileShift, state.gear1.outerDiameterCm]);
-
-  const gear2Scale = useMemo(() => {
-    const addendum = state.gear2.module * (1 + state.gear2.profileShift);
-    const pitchDiameter = state.gear2.module * state.gear2.toothCount;
-    const geometricDiameter = pitchDiameter + (2 * addendum);
-    const userDiameterMm = state.gear2.outerDiameterCm * 10;
-    return userDiameterMm / geometricDiameter;
-  }, [state.gear2.module, state.gear2.toothCount, state.gear2.profileShift, state.gear2.outerDiameterCm]);
-
   // 2. Animation Loop
   const animate = (time: number) => {
     if (previousTimeRef.current !== undefined) {
@@ -336,7 +319,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           </div>
           <div className="text-xs text-slate-300 font-mono space-y-1">
             <div className="flex justify-between"><span>Zähne:</span> <span className="text-white">{state.gear1.toothCount}</span></div>
-            <div className="flex justify-between"><span>Ø:</span> <span className="text-white">{state.gear1.outerDiameterCm}cm</span></div>
+            <div className="flex justify-between"><span>Ø:</span> <span className="text-white">{((state.gear1.module * state.gear1.toothCount + 2 * state.gear1.module * (1 + state.gear1.profileShift)) / 10).toFixed(1)}cm</span></div>
             <div className="flex justify-between"><span>Bohrung:</span> <span className="text-white">{state.gear1.centerHoleDiameter}mm</span></div>
           </div>
         </div>
@@ -359,7 +342,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           </div>
           <div className="text-xs text-slate-300 font-mono space-y-1 text-right">
             <div className="flex justify-between"><span>Zähne:</span> <span className="text-white">{state.gear2.toothCount}</span></div>
-            <div className="flex justify-between"><span>Ø:</span> <span className="text-white">{state.gear2.outerDiameterCm}cm</span></div>
+            <div className="flex justify-between"><span>Ø:</span> <span className="text-white">{((state.gear2.module * state.gear2.toothCount + 2 * state.gear2.module * (1 + state.gear2.profileShift)) / 10).toFixed(1)}cm</span></div>
             <div className="flex justify-between"><span>Bohrung:</span> <span className="text-white">{state.gear2.centerHoleDiameter}mm</span></div>
           </div>
         </div>
@@ -378,7 +361,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
         <g transform={`scale(${transform.scale}) translate(${transform.x}, ${transform.y})`}>
 
           {/* Gear 1 Group */}
-          <g transform={`scale(${gear1Scale})`}>
+          <g>
             {/* Visual Gear */}
             <g ref={g1Ref}>
               <path
@@ -392,7 +375,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           </g>
 
           {/* Gear 2 Group */}
-          <g transform={`translate(${centerDist}, 0) scale(${gear2Scale})`}>
+          <g transform={`translate(${centerDist}, 0)`}>
             {/* Visual Gear */}
             <g ref={g2Ref}>
               <path
