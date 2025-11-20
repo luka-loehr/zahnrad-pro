@@ -18,7 +18,7 @@ const ACTION_RESPONSE_SCHEMA = {
     properties: {
       action: {
         type: Type.STRING,
-        enum: ['download_svg', 'update_params', 'set_speed', 'name_chat', 'respond']
+        enum: ['download_svg', 'update_params', 'set_speed', 'name_chat', 'respond', 'getParams']
       },
       gear: {
         type: Type.STRING,
@@ -65,27 +65,7 @@ const ACTION_RESPONSE_SCHEMA = {
   }
 };
 
-// Build dynamic system prompt with real values
-const buildSystemPrompt = (state?: GearSystemState): string => {
-  let prompt = SYSTEM_PROMPT;
-
-  if (state) {
-    // Replace placeholders with actual values
-    prompt = prompt
-      .replace(/\[Zähnezahl_Blau\]/g, state.gear1.toothCount.toString())
-      .replace(/\[Modul_Blau\]/g, state.gear1.module.toString())
-      .replace(/\[Bohrung_Blau\]/g, state.gear1.centerHoleDiameter.toString())
-      .replace(/\[Zähnezahl_Rot\]/g, state.gear2.toothCount.toString())
-      .replace(/\[Modul_Rot\]/g, state.gear2.module.toString())
-      .replace(/\[Bohrung_Rot\]/g, state.gear2.centerHoleDiameter.toString())
-      .replace(/\[Verhältnis\]/g, state.ratio.toFixed(2))
-      .replace(/\[Geschwindigkeit\]/g, state.speed.toString());
-  }
-
-  return prompt;
-};
-
-// Generate compact status string for current state (legacy function)
+// Generate compact status string for current state
 const getStatusString = (state: GearSystemState): string => {
   return `**AKTUELLE WERTE:**
 Blau: ${state.gear1.toothCount} Zähne, ${state.gear1.module}mm Modul, ${state.gear1.centerHoleDiameter}mm Bohrung
@@ -113,8 +93,10 @@ export async function* streamMessageToGemini(
     parts: [{ text: msg.text }]
   }));
 
-  // Build system prompt with actual values embedded
-  const systemPrompt = buildSystemPrompt(currentState);
+  // Always add current state if provided (compact status as footer)
+  const systemPrompt = currentState
+    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
+    : SYSTEM_PROMPT;
 
   const payload = {
     model: MODEL_ID,
@@ -187,8 +169,10 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
     parts: [{ text: msg.text }]
   }));
 
-  // Build system prompt with actual values embedded
-  const systemPrompt = buildSystemPrompt(currentState);
+  // Always add current state if provided (compact status as footer)
+  const systemPrompt = currentState
+    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
+    : SYSTEM_PROMPT;
 
   const payload = {
     model: MODEL_ID,
