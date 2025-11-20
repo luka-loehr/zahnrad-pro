@@ -14,18 +14,18 @@ const CHAT_HISTORY_KEY = 'geargen-chat-history';
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
     role: 'model',
-    text: `Willkommen bei GearGen Pro! 🔧
+    text: `Yo! 👋 Willkommen bei GearGen Pro
 
-Ich bin dein KI-Assistent für Zahnraddesign.
+Ich bin dein KI-Assistent für Zahnräder. Links hast du ein **blaues** Zahnrad, rechts ein **rotes** – die Farben sind fix, aber alles andere kannst du ändern.
 
-**Verfügbare Befehle:**
-• "Gib mir die SVG-Datei für das blaue Zahnrad"
-• "Lade das rote Zahnrad herunter"
-• "Ändere die Zähnezahl vom blauen Zahnrad auf 20"
-• "Mach das Modul 3mm"
-• "Starte die Animation"
-• "Stoppe die Simulation"
-• Oder stell mir Fragen zur Zahnradmechanik!`
+**Was ich für dich tun kann:**
+• "Gib mir die SVG vom blauen Zahnrad" → Download
+• "Mach 20 Zähne" → Parameter ändern
+• "Größeres Modul" → Easy done
+• "Start die Animation" → Let's go
+• Oder frag mich einfach irgendwas zu Zahnrädern
+
+Schreib einfach, was du brauchst – kein Stress, kein Gelaber. Let's build! 🔧`
 };
 
 const AIChat: React.FC<AIChatProps> = ({ state, setState, onDownload }) => {
