@@ -51,7 +51,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             {/* Backdrop */}
             {open && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    className="fixed inset-0 bg-black/30 z-40"
                     onClick={onClose}
                 />
             )}
@@ -105,8 +105,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                         onClose();
                                     }}
                                     className={`group relative p-3 rounded-lg cursor-pointer transition-colors ${chat.id === currentChatId
-                                            ? 'bg-slate-700 border-l-4 border-brand-500'
-                                            : 'hover:bg-slate-800'
+                                        ? 'bg-slate-700 border-l-4 border-brand-500'
+                                        : 'hover:bg-slate-800'
                                         }`}
                                 >
                                     <div className="flex items-start justify-between gap-2">
