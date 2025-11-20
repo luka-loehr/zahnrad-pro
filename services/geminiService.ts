@@ -10,6 +10,79 @@ const truncateForLog = (input: string) => {
   return `${input.slice(0, MAX_LOG_LENGTH)}…`;
 };
 
+// Streaming version - yields text chunks as they arrive
+export async function* streamMessageToGemini(
+  message: string,
+  chatHistory: ChatMessage[] = []
+): AsyncGenerator<string, void, unknown> {
+  if (!process.env.API_KEY) {
+    console.error('[Gemini] API key missing before request dispatch.');
+    throw new Error("API Key not configured");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  // Build conversation history for context
+  // Skip the first message (welcome message) and format for Gemini
+  const history = chatHistory.slice(1).map(msg => ({
+    role: msg.role === 'model' ? 'model' : 'user',
+    parts: [{ text: msg.text }]
+  }));
+
+  const payload = {
+    model: MODEL_ID,
+    contents: [
+      ...history,
+      { role: 'user' as const, parts: [{ text: message }] }
+    ],
+    config: {
+      systemInstruction: SYSTEM_PROMPT,
+    }
+  };
+
+  console.debug('[Gemini] Dispatching streaming request', {
+    model: MODEL_ID,
+    hasApiKey: true,
+    promptPreview: truncateForLog(message),
+    promptLength: message.length,
+    historyLength: history.length
+  });
+
+  const requestStartedAt = Date.now();
+
+  try {
+    const stream = await ai.models.generateContentStream(payload);
+
+    for await (const chunk of stream) {
+      const chunkText = chunk.text;
+      if (chunkText) {
+        yield chunkText;
+      }
+    }
+
+    const durationMs = Date.now() - requestStartedAt;
+    console.debug('[Gemini] Stream completed', { durationMs });
+
+  } catch (error: any) {
+    const durationMs = Date.now() - requestStartedAt;
+    const status = error?.sdkHttpResponse?.status;
+    const statusText = error?.sdkHttpResponse?.statusText;
+    const requestId = error?.sdkHttpResponse?.headers?.['x-request-id'] ?? error?.sdkHttpResponse?.headers?.get?.('x-request-id');
+
+    console.error('[Gemini] API Error', {
+      durationMs,
+      status,
+      statusText,
+      requestId: requestId || null,
+      messageSnippet: truncateForLog(message),
+      errorMessage: error?.message ?? 'Unknown error'
+    }, error);
+
+    throw error;
+  }
+}
+
+// Non-streaming version (kept for backwards compatibility)
 export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = []): Promise<string> => {
   if (!process.env.API_KEY) {
     console.error('[Gemini] API key missing before request dispatch.');

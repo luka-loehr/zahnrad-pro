@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GearSystemState, ChatMessage } from '../types';
 import { MessageSquare, Send, AlertCircle, Menu } from 'lucide-react';
-import { sendMessageToGemini } from '../services/geminiService';
+import { streamMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
 
 interface AIChatProps {
@@ -27,6 +27,7 @@ const AIChat: React.FC<AIChatProps> = ({
 }) => {
     const [chatInput, setChatInput] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const [streamingMessage, setStreamingMessage] = useState('');
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
     const handleAiSubmit = async (e: React.FormEvent) => {
@@ -39,13 +40,22 @@ const AIChat: React.FC<AIChatProps> = ({
         // Add user message through parent
         onSendMessage(userMsg);
         setIsAiLoading(true);
+        setStreamingMessage('');
 
         try {
-            const responseText = await sendMessageToGemini(userMsg, messages);
-            console.log("🤖 AI Raw Response:", responseText);
+            let fullResponse = '';
 
+            // Stream the response
+            for await (const chunk of streamMessageToGemini(userMsg, messages)) {
+                fullResponse += chunk;
+                setStreamingMessage(fullResponse);
+            }
+
+            console.log("🤖 AI Full Response:", fullResponse);
+
+            // Now process the complete response for actions
             // Try to find JSON in the response (either object or array)
-            const jsonMatch = responseText.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+            const jsonMatch = fullResponse.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
 
             if (jsonMatch) {
                 try {
@@ -105,37 +115,43 @@ const AIChat: React.FC<AIChatProps> = ({
                         }
                     }
 
+                    // Clear streaming message and show final message
+                    setStreamingMessage('');
+
                     // Show message if any action was executed
                     if (actionExecuted && messageToShow) {
                         onSendMessage(messageToShow, 'model');
                     } else if (!actionExecuted) {
                         console.log("⚠️ JSON found but no valid actions executed");
-                        onSendMessage(responseText, 'model');
+                        onSendMessage(fullResponse, 'model');
                     }
 
                 } catch (e) {
                     console.error("❌ Failed to parse AI JSON:", e);
-                    onSendMessage(responseText, 'model');
+                    setStreamingMessage('');
+                    onSendMessage(fullResponse, 'model');
                 }
             } else {
                 console.log("ℹ️ No JSON found in response");
-                onSendMessage(responseText, 'model');
+                setStreamingMessage('');
+                onSendMessage(fullResponse, 'model');
             }
 
         } catch (error) {
             console.error("🔥 AI Service Error:", error);
+            setStreamingMessage('');
             onSendMessage('Fehler: Verbindung zur KI nicht möglich. Prüfen Sie den API-Schlüssel.', 'model', true);
         } finally {
             setIsAiLoading(false);
         }
     };
 
-    // Auto-scroll to bottom when messages update
+    // Auto-scroll to bottom when messages update or streaming
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [messages, isAiLoading]);
+    }, [messages, isAiLoading, streamingMessage]);
 
     return (
         <div className="w-full md:w-1/2 bg-slate-800 flex flex-col shadow-xl border-r border-slate-700">
@@ -176,8 +192,12 @@ const AIChat: React.FC<AIChatProps> = ({
                 ))}
                 {isAiLoading && (
                     <div className="flex justify-start">
-                        <div className="bg-slate-700 rounded-lg p-3 text-sm text-slate-400 italic animate-pulse">
-                            Denke nach...
+                        <div className="bg-slate-700 rounded-lg p-3 text-sm text-slate-200">
+                            {streamingMessage ? (
+                                <MarkdownText text={streamingMessage} />
+                            ) : (
+                                <span className="text-slate-400 italic animate-pulse">Denke nach...</span>
+                            )}
                         </div>
                     </div>
                 )}
