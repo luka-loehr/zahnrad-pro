@@ -372,8 +372,8 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
       >
         <g transform={`scale(${transform.scale}) translate(${transform.x}, ${transform.y})`}>
 
-          {/* Gear 1 Group */}
-          <g>
+          {/* Gear 1 Group - centered horizontally */}
+          <g transform={`translate(${-centerDist / 2}, 0)`}>
             {/* Visual Gear */}
             <g ref={g1Ref}>
               <path
@@ -386,8 +386,8 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
             </g>
           </g>
 
-          {/* Gear 2 Group */}
-          <g transform={`translate(${centerDist}, 0)`}>
+          {/* Gear 2 Group - centered horizontally */}
+          <g transform={`translate(${centerDist / 2}, 0)`}>
             {/* Visual Gear */}
             <g ref={g2Ref}>
               <path
