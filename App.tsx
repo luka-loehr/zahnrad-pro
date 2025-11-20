@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ControlPanel from './components/ControlPanel';
+import AIChat from './components/AIChat';
 import GearCanvas from './components/GearCanvas';
 import { GearSystemState } from './types';
 import { INITIAL_GEAR_1, INITIAL_GEAR_2 } from './constants';
@@ -35,7 +35,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen w-full bg-slate-900 text-slate-100">
-      <ControlPanel
+      <AIChat
         state={state}
         setState={setState}
         onDownload={handleDownload}
