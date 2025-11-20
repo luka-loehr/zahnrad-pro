@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
 import { ChatMessage } from '../types';
 
@@ -8,6 +8,62 @@ const MAX_LOG_LENGTH = 160;
 const truncateForLog = (input: string) => {
   if (input.length <= MAX_LOG_LENGTH) return input;
   return `${input.slice(0, MAX_LOG_LENGTH)}…`;
+};
+
+// Define the response schema for structured outputs
+const ACTION_RESPONSE_SCHEMA = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      action: {
+        type: Type.STRING,
+        enum: ['download_svg', 'update_params', 'toggle_animation', 'name_chat', 'respond']
+      },
+      gear: {
+        type: Type.STRING,
+        enum: ['blue', 'red'],
+        nullable: true
+      },
+      message: {
+        type: Type.STRING
+      },
+      chatName: {
+        type: Type.STRING,
+        nullable: true
+      },
+      playing: {
+        type: Type.BOOLEAN,
+        nullable: true
+      },
+      params: {
+        type: Type.OBJECT,
+        nullable: true,
+        properties: {
+          gear1: {
+            type: Type.OBJECT,
+            nullable: true,
+            properties: {
+              toothCount: { type: Type.NUMBER, nullable: true },
+              module: { type: Type.NUMBER, nullable: true },
+              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
+            }
+          },
+          gear2: {
+            type: Type.OBJECT,
+            nullable: true,
+            properties: {
+              toothCount: { type: Type.NUMBER, nullable: true },
+              module: { type: Type.NUMBER, nullable: true },
+              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
+            }
+          },
+          speed: { type: Type.NUMBER, nullable: true }
+        }
+      }
+    },
+    required: ['action', 'message']
+  }
 };
 
 // Streaming version - yields text chunks as they arrive
@@ -37,6 +93,8 @@ export async function* streamMessageToGemini(
     ],
     config: {
       systemInstruction: SYSTEM_PROMPT,
+      responseMimeType: 'application/json',
+      responseSchema: ACTION_RESPONSE_SCHEMA,
     }
   };
 
@@ -106,6 +164,8 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
     ],
     config: {
       systemInstruction: SYSTEM_PROMPT,
+      responseMimeType: 'application/json',
+      responseSchema: ACTION_RESPONSE_SCHEMA,
     }
   };
 

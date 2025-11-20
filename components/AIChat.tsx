@@ -45,7 +45,7 @@ const AIChat: React.FC<AIChatProps> = ({
         try {
             let fullResponse = '';
 
-            // Stream the response
+            // Stream the response (now guaranteed to be valid JSON)
             for await (const chunk of streamMessageToGemini(userMsg, messages)) {
                 fullResponse += chunk;
                 setStreamingMessage(fullResponse);
@@ -53,88 +53,64 @@ const AIChat: React.FC<AIChatProps> = ({
 
             console.log("🤖 AI Full Response:", fullResponse);
 
-            // Now process the complete response for actions
-            // Try to find JSON in the response (either object or array)
-            const jsonMatch = fullResponse.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+            // Parse the structured JSON response (guaranteed to be valid)
+            const commands = JSON.parse(fullResponse);
+            console.log("✅ Parsed JSON:", commands);
+            console.log(`📋 Processing ${commands.length} command(s)`);
 
-            if (jsonMatch) {
-                try {
-                    console.log("🔍 Found JSON candidate:", jsonMatch[0]);
-                    const parsed = JSON.parse(jsonMatch[0]);
-                    console.log("✅ Parsed JSON:", parsed);
+            let messageToShow = '';
 
-                    // Normalize to array (if single object, wrap it)
-                    const commands = Array.isArray(parsed) ? parsed : [parsed];
-                    console.log(`📋 Processing ${commands.length} command(s)`);
-
-                    let messageToShow = '';
-                    let actionExecuted = false;
-
-                    // Process all commands
-                    for (const command of commands) {
-                        // Collect the message from the first command that has one
-                        if (!messageToShow && command.message) {
-                            messageToShow = command.message;
-                        }
-
-                        // Handle name_chat action
-                        if (command.action === 'name_chat' && command.chatName) {
-                            onChatNamed(command.chatName);
-                            actionExecuted = true;
-                        }
-                        // Handle download_svg action
-                        else if (command.action === 'download_svg' && command.gear) {
-                            const gearIndex = command.gear === 'blue' ? 1 : 2;
-                            onDownload(gearIndex);
-                            actionExecuted = true;
-                            console.log(`⬇️ Downloaded ${command.gear} gear`);
-                        }
-                        // Handle toggle_animation action
-                        else if (command.action === 'toggle_animation' && command.playing !== undefined) {
-                            setState(prev => ({ ...prev, isPlaying: command.playing }));
-                            actionExecuted = true;
-                        }
-                        // Handle update_params action
-                        else if (command.action === 'update_params' && command.params) {
-                            setState(prev => {
-                                const next = { ...prev };
-                                const p = command.params;
-
-                                if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
-                                if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
-                                if (p.speed !== undefined) next.speed = p.speed;
-
-                                // Recalculate ratio if teeth changed
-                                if (p.gear1?.toothCount || p.gear2?.toothCount) {
-                                    next.ratio = next.gear2.toothCount / next.gear1.toothCount;
-                                }
-
-                                return next;
-                            });
-                            actionExecuted = true;
-                        }
-                    }
-
-                    // Clear streaming message and show final message
-                    setStreamingMessage('');
-
-                    // Show message if any action was executed
-                    if (actionExecuted && messageToShow) {
-                        onSendMessage(messageToShow, 'model');
-                    } else if (!actionExecuted) {
-                        console.log("⚠️ JSON found but no valid actions executed");
-                        onSendMessage(fullResponse, 'model');
-                    }
-
-                } catch (e) {
-                    console.error("❌ Failed to parse AI JSON:", e);
-                    setStreamingMessage('');
-                    onSendMessage(fullResponse, 'model');
+            // Process all commands
+            for (const command of commands) {
+                // Collect the message from the first command (message is now required)
+                if (!messageToShow && command.message && command.message.trim()) {
+                    messageToShow = command.message;
                 }
-            } else {
-                console.log("ℹ️ No JSON found in response");
-                setStreamingMessage('');
-                onSendMessage(fullResponse, 'model');
+
+                // Handle name_chat action
+                if (command.action === 'name_chat' && command.chatName) {
+                    onChatNamed(command.chatName);
+                }
+                // Handle download_svg action
+                else if (command.action === 'download_svg' && command.gear) {
+                    const gearIndex = command.gear === 'blue' ? 1 : 2;
+                    onDownload(gearIndex);
+                    console.log(`⬇️ Downloaded ${command.gear} gear`);
+                }
+                // Handle toggle_animation action
+                else if (command.action === 'toggle_animation' && command.playing !== undefined) {
+                    setState(prev => ({ ...prev, isPlaying: command.playing }));
+                }
+                // Handle update_params action
+                else if (command.action === 'update_params' && command.params) {
+                    setState(prev => {
+                        const next = { ...prev };
+                        const p = command.params;
+
+                        if (p.gear1) next.gear1 = { ...next.gear1, ...p.gear1 };
+                        if (p.gear2) next.gear2 = { ...next.gear2, ...p.gear2 };
+                        if (p.speed !== undefined) next.speed = p.speed;
+
+                        // Recalculate ratio if teeth changed
+                        if (p.gear1?.toothCount || p.gear2?.toothCount) {
+                            next.ratio = next.gear2.toothCount / next.gear1.toothCount;
+                        }
+
+                        return next;
+                    });
+                }
+                // Handle respond action (pure conversational response)
+                // No additional action needed, just the message
+            }
+
+            // Clear streaming message and show final message
+            setStreamingMessage('');
+
+            // Show message (required by schema, so always present)
+            // Use first non-empty message, or first command's message if all are empty
+            const finalMessage = messageToShow || (commands.length > 0 ? commands[0].message : '');
+            if (finalMessage) {
+                onSendMessage(finalMessage, 'model');
             }
 
         } catch (error) {
