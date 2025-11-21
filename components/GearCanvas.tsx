@@ -20,6 +20,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTouchDistance = useRef<number | null>(null);
   const lastTouchCenter = useRef<{ x: number; y: number } | null>(null);
+  const baseScale = useRef<number>(1); // Store initial auto-fit scale for relative zoom display
 
   // References to SVG groups to manipulate transform directly for performance
   const g1Ref = useRef<SVGGElement>(null);
@@ -98,6 +99,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
   // Initial scale to fit content
   useEffect(() => {
     const initialScale = viewBoxSize / maxDiameter;
+    baseScale.current = initialScale; // Store as base for relative zoom display
     setTransform({ x: 0, y: 0, scale: initialScale });
   }, [maxDiameter]);
 
@@ -416,7 +418,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
           </button>
         </div>
         <div className="text-xs text-slate-400 bg-slate-900/90 px-3 py-2 md:px-2 md:py-1.5 rounded-lg shadow-lg">
-          Zoom: {(transform.scale * 100).toFixed(0)}%
+          Zoom: {((transform.scale / baseScale.current) * 100).toFixed(0)}%
         </div>
       </div>
     </div>
