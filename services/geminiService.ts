@@ -4,6 +4,7 @@ import { ChatMessage, GearSystemState } from '../types';
 
 const MODEL_ID = 'gemini-2.5-flash';
 const MAX_LOG_LENGTH = 160;
+const DISABLE_THINKING_CONFIG = { thinkingBudget: 0 } as const;
 
 const truncateForLog = (input: string) => {
   if (input.length <= MAX_LOG_LENGTH) return input;
@@ -108,6 +109,8 @@ export async function* streamMessageToGemini(
       systemInstruction: systemPrompt,
       responseMimeType: 'application/json',
       responseSchema: ACTION_RESPONSE_SCHEMA,
+      // Explicitly disable thinking mode for gemini-2.5-flash (thinkingBudget > 0 would enable it)
+      thinkingConfig: DISABLE_THINKING_CONFIG,
     }
   };
 
@@ -184,6 +187,8 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
       systemInstruction: systemPrompt,
       responseMimeType: 'application/json',
       responseSchema: ACTION_RESPONSE_SCHEMA,
+      // Explicitly disable thinking mode for gemini-2.5-flash (thinkingBudget > 0 would enable it)
+      thinkingConfig: DISABLE_THINKING_CONFIG,
     }
   };
 
