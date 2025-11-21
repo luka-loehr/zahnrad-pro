@@ -40,7 +40,7 @@ const App: React.FC = () => {
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [chatPanelWidth, setChatPanelWidth] = useState(30); // percentage (30% chat, 70% renderer)
+  const [chatPanelWidth, setChatPanelWidth] = useState(40); // percentage (40% chat, 60% renderer)
   const [isDragging, setIsDragging] = useState(false);
 
   // Initialize chat sessions - ALWAYS create a new chat on load
@@ -327,8 +327,8 @@ const App: React.FC = () => {
 
       const newWidth = (clientX / windowWidth) * 100;
 
-      // Apply limits: min chat 25%, max chat 55% (ensures min renderer 45%)
-      const clampedWidth = Math.min(Math.max(newWidth, 25), 55);
+      // Apply limits: min chat 40%, max chat 55% (ensures min renderer 45%)
+      const clampedWidth = Math.min(Math.max(newWidth, 40), 55);
       setChatPanelWidth(clampedWidth);
     };
 
