@@ -15,6 +15,9 @@ interface AIChatProps {
     onToggleSidebar: () => void;
     onChatNamed: (name: string) => void;
     onNewChat: () => void;
+    width: number; // percentage
+    onDragStart: () => void;
+    isDragging: boolean;
 }
 
 const AIChat: React.FC<AIChatProps> = ({
@@ -27,7 +30,10 @@ const AIChat: React.FC<AIChatProps> = ({
     onSendMessage,
     onToggleSidebar,
     onChatNamed,
-    onNewChat
+    onNewChat,
+    width,
+    onDragStart,
+    isDragging
 }) => {
     const [chatInput, setChatInput] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
@@ -159,7 +165,24 @@ const AIChat: React.FC<AIChatProps> = ({
     }, [messages, isAiLoading, streamingMessage]);
 
     return (
-        <div className="w-full md:w-1/2 bg-slate-800 flex flex-col shadow-xl border-r border-slate-700">
+        <div
+            className="relative bg-slate-800 flex flex-col shadow-xl border-r border-slate-700"
+            style={{
+                width: `${width}%`,
+                minWidth: '20%',
+                maxWidth: '80%'
+            }}
+        >
+            {/* Draggable Divider */}
+            <div
+                className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all z-10 ${isDragging ? 'bg-brand-500' : 'bg-slate-700 hover:bg-brand-500'
+                    }`}
+                onMouseDown={onDragStart}
+            >
+                {/* Wider invisible hit area for easier grabbing */}
+                <div className="absolute inset-y-0 -left-2 -right-2" />
+            </div>
+
             {/* Header */}
             <div className="p-4 border-b border-slate-700 bg-slate-900 flex items-center gap-3">
                 <button

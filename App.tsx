@@ -40,6 +40,8 @@ const App: React.FC = () => {
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatPanelWidth, setChatPanelWidth] = useState(50); // percentage
+  const [isDragging, setIsDragging] = useState(false);
 
   // Initialize chat sessions - ALWAYS create a new chat on load
   const [chatList, setChatList] = useState<ChatList>(() => {
@@ -266,8 +268,46 @@ const App: React.FC = () => {
     downloadSVG(svgContent, 'Zahnrad_System_Beide.svg');
   };
 
+  // Handle dragging the divider
+  const handleMouseDown = () => {
+    setIsDragging(true);
+  };
+
+  // Add/remove event listeners for dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const windowWidth = window.innerWidth;
+      const newWidth = (e.clientX / windowWidth) * 100;
+
+      // Apply limits: min 20%, max 80%
+      const clampedWidth = Math.min(Math.max(newWidth, 20), 80);
+      setChatPanelWidth(clampedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+
   return (
-    <div className="flex flex-col md:flex-row w-full bg-slate-900 text-slate-100 overflow-hidden" style={{ height: '100dvh' }}>
+    <div
+      className="flex flex-col md:flex-row w-full bg-slate-900 text-slate-100 overflow-hidden"
+      style={{
+        height: '100dvh',
+        cursor: isDragging ? 'col-resize' : 'default'
+      }}
+    >
       <ChatSidebar
         open={sidebarOpen}
         chats={chatList.chats}
@@ -287,6 +327,9 @@ const App: React.FC = () => {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onChatNamed={(name) => updateChatName(currentChat.id, name)}
         onNewChat={createNewChat}
+        width={chatPanelWidth}
+        onDragStart={handleMouseDown}
+        isDragging={isDragging}
       />
       <GearCanvas state={state} id="gear-canvas-main" />
     </div>
