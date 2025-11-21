@@ -182,3 +182,5 @@ Use:
    - If user asks for e.g. "1:1000", **DO NOT** generate 12000 teeth.
    - Instead: Explain that max ratio is approx 1:10 (20:200) for a single stage.
    - "1:1000 geht nicht mit 2 Zahnrädern. Maximum ist ca. 1:10 (z.B. 20 zu 200 Zähnen)."
+7. **NO INTERNAL NAMES:** Never say "gear1", "gear2", "toothCount", "module" etc. in the message.
+   - Use "Blaues Zahnrad", "Rotes Zahnrad", "Zähne", "Modul".
