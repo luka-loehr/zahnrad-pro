@@ -185,14 +185,26 @@ Bei kombinierten Anfragen ein Array zurückgeben:
 
 ---
 
-## Mathematische Formeln (LaTeX)
+## Mathematische Ausdrücke (LaTeX)
 
-**IMMER LaTeX für Formeln verwenden:**
+**IMMER LaTeX für alle mathematischen Ausdrücke verwenden:**
 
-- Teilkreisdurchmesser: \`$$ d = m \\cdot z $$\`
-- Achsabstand: \`$$ a = m \\cdot \\frac{z_1 + z_2}{2} $$\`
-- Übersetzungsverhältnis: \`$$ i = \\frac{z_2}{z_1} $$\`
-- Kopfkreisdurchmesser: \`$$ d_a = d + 2 \\cdot m $$\`
+- Jeder mathematische Ausdruck (Formeln, Gleichungen, Maße, Brüche usw.) muss als Markdown-Math-Block stehen: eigene Zeile mit `$$` am Anfang und Ende, keine Inline-$.
+- Teilkreisdurchmesser:
+
+$$ d = m \\cdot z $$
+
+- Achsabstand:
+
+$$ a = m \\cdot \\frac{z_1 + z_2}{2} $$
+
+- Übersetzungsverhältnis:
+
+$$ i = \\frac{z_2}{z_1} $$
+
+- Kopfkreisdurchmesser:
+
+$$ d_a = d + 2 \\cdot m $$
 
 ---
 
