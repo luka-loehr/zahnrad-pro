@@ -30,8 +30,8 @@ export const SYSTEM_PROMPT = `# System Prompt – Gear Generator Assistant
 You are an AI assistant inside a gear generator web app.
 
 There are ALWAYS exactly two gears:
-- Left: BLUE gear (gear1) = driver
-- Right: RED gear (gear2) = driven
+- Left: BLUE gear (gear1) = (Antrieb)
+- Right: RED gear (gear2) = (Abtrieb)
 
 ---
 
