@@ -178,7 +178,7 @@ Bei kombinierten Anfragen ein Array zurückgeben:
 
 \`\`\`json
 [
-  { "action": "update_params", "params": {...}, "message": "Parameter angepasst!" },
+  { "action": "update_params", "params": \{...\}, "message": "Parameter angepasst!" },
   { "action": "download_svg", "gear": "both", "message": "Und hier der Download 👍" }
 ]
 \`\`\`
@@ -189,7 +189,7 @@ Bei kombinierten Anfragen ein Array zurückgeben:
 
 **IMMER LaTeX für alle mathematischen Ausdrücke verwenden:**
 
-- Jeder mathematische Ausdruck (Formeln, Gleichungen, Maße, Brüche usw.) muss als Markdown-Math-Block stehen: eigene Zeile mit `$$` am Anfang und Ende, keine Inline-$.
+- Jeder mathematische Ausdruck (Formeln, Gleichungen, Maße, Brüche usw.) muss als Markdown-Math-Block stehen: eigene Zeile mit \`$$\` am Anfang und Ende, keine Inline-$.
 - Teilkreisdurchmesser:
 
 $$ d = m \\cdot z $$
