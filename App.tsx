@@ -281,8 +281,8 @@ const App: React.FC = () => {
       const windowWidth = window.innerWidth;
       const newWidth = (e.clientX / windowWidth) * 100;
 
-      // Apply limits: min chat 20%, max chat 70% (ensures min renderer 30%)
-      const clampedWidth = Math.min(Math.max(newWidth, 20), 70);
+      // Apply limits: min chat 25%, max chat 70% (ensures min renderer 30%)
+      const clampedWidth = Math.min(Math.max(newWidth, 25), 70);
       setChatPanelWidth(clampedWidth);
     };
 

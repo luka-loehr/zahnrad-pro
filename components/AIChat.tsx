@@ -169,7 +169,7 @@ const AIChat: React.FC<AIChatProps> = ({
             className="relative bg-slate-800 flex flex-col shadow-xl border-r border-slate-700"
             style={{
                 width: `${width}%`,
-                minWidth: '20%',
+                minWidth: '25%',
                 maxWidth: '70%'
             }}
         >
