@@ -105,18 +105,23 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
 
   // Helper function to clamp transform to keep gears in view
   const clampTransform = (t: { x: number; y: number; scale: number }) => {
-    // Calculate the bounding box of the gear system in SVG units
-    // The gears are centered at (-centerDist/2, 0) and (centerDist/2, 0)
-    // The max radius is roughly maxDiameter / 2
-    const maxRadius = maxDiameter / 2;
+    // The viewBox is 1000x1000 centered at (0,0), so it extends from -500 to +500 in both directions
+    // We want to allow panning until the gears reach the edge of the viewBox
+    // Calculate how far we can pan based on the viewBox size and current scale
 
-    // Pan limits: allow panning up to the edge of the content
-    // At higher zoom, allow more panning; at lower zoom, restrict it
-    const panLimit = maxRadius / t.scale;
+    // At scale 1, we can pan ±500 units (to the edge of viewBox)
+    // At higher scales, we can pan more (because content is bigger)
+    // At lower scales, we can pan less (because content is smaller)
+    const viewBoxHalfSize = viewBoxSize / 2; // 500
+    const gearSystemRadius = maxDiameter / 2;
+
+    // Maximum pan distance: viewBox edge minus gear system radius, scaled by zoom
+    // This allows the gears to reach the edge but not go completely off-screen
+    const maxPan = (viewBoxHalfSize - gearSystemRadius / 2) / t.scale;
 
     return {
-      x: Math.max(-panLimit, Math.min(panLimit, t.x)),
-      y: Math.max(-panLimit, Math.min(panLimit, t.y)),
+      x: Math.max(-maxPan, Math.min(maxPan, t.x)),
+      y: Math.max(-maxPan, Math.min(maxPan, t.y)),
       scale: t.scale
     };
   };
