@@ -92,6 +92,7 @@ Wenn die Seite neu geladen wird, sind die Parameter so voreingestellt:
 
 - \`"both"\` = beide Zahnräder in EINER SVG, korrekt positioniert und verzahnt
 - SVG nutzt exakte Maße aus Konfiguration, keine automatische Skalierung
+- **Perfekt für Lasercutter (Laserschneiden)**
 
 ### 2. STL Download (3D Druck)
 
