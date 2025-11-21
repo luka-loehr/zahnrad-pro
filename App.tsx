@@ -315,9 +315,17 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
       const windowWidth = window.innerWidth;
-      const newWidth = (e.clientX / windowWidth) * 100;
+      let clientX;
+
+      if ('touches' in e) {
+        clientX = e.touches[0].clientX;
+      } else {
+        clientX = e.clientX;
+      }
+
+      const newWidth = (clientX / windowWidth) * 100;
 
       // Apply limits: min chat 25%, max chat 55% (ensures min renderer 45%)
       const clampedWidth = Math.min(Math.max(newWidth, 25), 55);
@@ -330,10 +338,14 @@ const App: React.FC = () => {
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleMouseMove);
+    window.addEventListener('touchend', handleMouseUp);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleMouseMove);
+      window.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDragging]);
 

@@ -193,6 +193,7 @@ const AIChat: React.FC<AIChatProps> = ({
                 className={`absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all z-10 ${isDragging ? 'bg-brand-500' : 'bg-slate-700 hover:bg-brand-500'
                     }`}
                 onMouseDown={onDragStart}
+                onTouchStart={onDragStart}
             >
                 {/* Wider invisible hit area for easier grabbing */}
                 <div className="absolute inset-y-0 -left-2 -right-2" />
