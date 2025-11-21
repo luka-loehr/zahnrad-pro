@@ -170,7 +170,7 @@ const AIChat: React.FC<AIChatProps> = ({
             style={{
                 width: `${width}%`,
                 minWidth: '25%',
-                maxWidth: '60%'
+                maxWidth: '55%'
             }}
         >
             {/* Draggable Divider */}
