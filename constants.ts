@@ -189,9 +189,7 @@ Bei kombinierten Anfragen ein Array zurückgeben:
 
 **IMMER LaTeX für alle mathematischen Ausdrücke verwenden:**
 
-- Jeder mathematische Ausdruck (Formeln, Gleichungen, Maße, Brüche usw.) muss mit \`$$\` am Anfang und Ende stehen (Markdown-Math-Block).
-- Keine einfachen \`$...$\` verwenden – Doppel-Dollar ist Pflicht. Eigene Zeile ist nice-to-have, aber nicht zwingend.
-- Doppel-Dollar auch mitten im Satz nutzen – niemals Einzel-Dollar oder Plaintext für Zahlen/Gleichungen.
+- Jeder mathematische Ausdruck (Formeln, Gleichungen, Maße, Brüche usw.) muss als Markdown-Math-Block stehen: eigene Zeile mit `$$` am Anfang und Ende, keine Inline-$.
 - Teilkreisdurchmesser:
 
 $$ d = m \\cdot z $$
