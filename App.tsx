@@ -20,7 +20,7 @@ Sag mir einfach:
 • welche Bohrung du willst
 • oder frag mich irgendwas – ich erklär dir alles zu Zahnrädern und Formeln
 
-Und wenn alles passt: „Gib mir die SVG-Datei (für Lasercutter)" oder „Exportiere als 3D-Modell (STL)".
+Und wenn alles passt: „Gib mir die Laserdruck-Datei" oder „Exportiere als 3D-Druck-Datei".
 
 Leg los! 🚀`
 };
