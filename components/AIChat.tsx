@@ -9,6 +9,8 @@ interface AIChatProps {
     setState: React.Dispatch<React.SetStateAction<GearSystemState>>;
     onDownload: (gearIndex: 1 | 2) => void;
     onDownloadBoth: () => void;
+    onDownloadSTL: (gearIndex: 1 | 2) => void;
+    onDownloadBothSTL: () => void;
     messages: ChatMessage[];
     chatName: string;
     onSendMessage: (message: string, role?: 'user' | 'model', isError?: boolean) => void;
@@ -25,6 +27,8 @@ const AIChat: React.FC<AIChatProps> = ({
     setState,
     onDownload,
     onDownloadBoth,
+    onDownloadSTL,
+    onDownloadBothSTL,
     messages,
     chatName,
     onSendMessage,
@@ -89,11 +93,22 @@ const AIChat: React.FC<AIChatProps> = ({
                 else if (command.action === 'download_svg' && command.gear) {
                     if (command.gear === 'both') {
                         onDownloadBoth();
-                        console.log('⬇️ Downloaded both gears together');
+                        console.log('⬇️ Downloaded both gears together (SVG)');
                     } else {
                         const gearIndex = command.gear === 'blue' ? 1 : 2;
                         onDownload(gearIndex);
-                        console.log(`⬇️ Downloaded ${command.gear} gear`);
+                        console.log(`⬇️ Downloaded ${command.gear} gear (SVG)`);
+                    }
+                }
+                // Handle download_stl action
+                else if (command.action === 'download_stl' && command.gear) {
+                    if (command.gear === 'both') {
+                        onDownloadBothSTL();
+                        console.log('⬇️ Downloaded both gears together (STL)');
+                    } else {
+                        const gearIndex = command.gear === 'blue' ? 1 : 2;
+                        onDownloadSTL(gearIndex);
+                        console.log(`⬇️ Downloaded ${command.gear} gear (STL)`);
                     }
                 }
                 // Handle set_speed action

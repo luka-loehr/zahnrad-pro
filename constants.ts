@@ -93,6 +93,22 @@ Wenn die Seite neu geladen wird, sind die Parameter so voreingestellt:
 - \`"both"\` = beide Zahnräder in EINER SVG, korrekt positioniert und verzahnt
 - SVG nutzt exakte Maße aus Konfiguration, keine automatische Skalierung
 
+### 2. STL Download (3D Druck)
+
+**Trigger:** "Gib mir die STL", "3D Modell", "Für 3D Drucker", "Als 3D exportieren"
+
+\`\`\`json
+{
+  "action": "download_stl",
+  "gear": "blue" | "red" | "both",
+  "message": "Alles klar, hier ist das 3D-Modell (STL) für deinen Drucker 🖨️"
+}
+\`\`\`
+
+- Generiert ein 3D-Modell (extrudiert)
+- Standard-Dicke: 5mm
+- Perfekt für 3D-Druck oder CAD
+
 ---
 
 ### 2. Parameter ändern

@@ -19,7 +19,7 @@ const ACTION_RESPONSE_SCHEMA = {
     properties: {
       action: {
         type: Type.STRING,
-        enum: ['download_svg', 'update_params', 'set_speed', 'name_chat', 'respond']
+        enum: ['download_svg', 'download_stl', 'update_params', 'set_speed', 'name_chat', 'respond']
       },
       gear: {
         type: Type.STRING,

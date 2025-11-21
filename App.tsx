@@ -4,7 +4,7 @@ import ChatSidebar from './components/ChatSidebar';
 import GearCanvas from './components/GearCanvas';
 import { GearSystemState, ChatSession, ChatList, ChatMessage } from './types';
 import { INITIAL_GEAR_1, INITIAL_GEAR_2 } from './constants';
-import { generateGearPath, downloadSVG, calculateCenterDistance } from './utils/gearMath';
+import { generateGearPath, downloadSVG, calculateCenterDistance, generateSTL, downloadSTL } from './utils/gearMath';
 
 const CHAT_SESSIONS_KEY = 'zahnrad-pro-chat-sessions';
 const OLD_CHAT_HISTORY_KEY = 'zahnrad-pro-chat-history';
@@ -20,7 +20,7 @@ Sag mir einfach:
 • welche Bohrung du willst
 • oder frag mich irgendwas – ich erklär dir alles zu Zahnrädern und Formeln
 
-Und wenn alles passt: „Gib mir die SVG-Datei."
+Und wenn alles passt: „Gib mir die SVG-Datei" oder „Exportiere als 3D-Modell (STL)".
 
 Leg los! 🚀`
 };
@@ -212,7 +212,7 @@ const App: React.FC = () => {
   <!-- Role: ${gear.role}, Module: ${gear.module}mm, Teeth: ${gear.toothCount} -->
   <!-- Pressure Angle: ${gear.pressureAngle}°, Center Hole: ${gear.centerHoleDiameter}mm -->
   <!-- Ratio: ${state.ratio.toFixed(2)} (${state.gear2.toothCount}:${state.gear1.toothCount}) -->
-  <path d="${pathData}" fill="none" stroke="black" stroke-width="0.5" transform="translate(${offset}, ${offset})"/>
+  <path d="${pathData}" fill="none" stroke="${gear.color}" stroke-width="0.5" transform="translate(${offset}, ${offset})"/>
 </svg>`.trim();
 
     const gearName = gearIdx === 1 ? 'Blaues_Zahnrad' : 'Rotes_Zahnrad';
@@ -259,13 +259,51 @@ const App: React.FC = () => {
   <!-- Module: ${state.gear1.module}mm, Pressure Angle: ${state.gear1.pressureAngle}° -->
   
   <!-- Gear 1 (Blue, Left) -->
-  <path d="${gear1Path}" fill="none" stroke="blue" stroke-width="0.5" transform="translate(${gear1X}, ${gear1Y})"/>
+  <path d="${gear1Path}" fill="none" stroke="${state.gear1.color}" stroke-width="0.5" transform="translate(${gear1X}, ${gear1Y})"/>
   
   <!-- Gear 2 (Red, Right) -->
-  <path d="${gear2Path}" fill="none" stroke="red" stroke-width="0.5" transform="translate(${gear2X}, ${gear2Y})"/>
+  <path d="${gear2Path}" fill="none" stroke="${state.gear2.color}" stroke-width="0.5" transform="translate(${gear2X}, ${gear2Y})"/>
 </svg>`.trim();
 
     downloadSVG(svgContent, 'Zahnrad_System_Beide.svg');
+  };
+
+  const handleDownloadSTL = (gearIdx: 1 | 2) => {
+    const gear = gearIdx === 1 ? state.gear1 : state.gear2;
+    const stlContent = generateSTL(gear);
+    const gearName = gearIdx === 1 ? 'Blaues_Zahnrad' : 'Rotes_Zahnrad';
+    downloadSTL(stlContent, `${gearName}.stl`);
+  };
+
+  const handleDownloadBothSTL = () => {
+    // Calculate geometric dimensions for both gears
+    const addendum1 = state.gear1.module * (1 + state.gear1.profileShift);
+    const pitchDiameter1 = state.gear1.module * state.gear1.toothCount;
+    const diameter1Mm = pitchDiameter1 + (2 * addendum1);
+
+    const addendum2 = state.gear2.module * (1 + state.gear2.profileShift);
+    const pitchDiameter2 = state.gear2.module * state.gear2.toothCount;
+    const diameter2Mm = pitchDiameter2 + (2 * addendum2);
+
+    // For laser cutting: separate gears with a gap instead of meshing them
+    const gapBetweenGears = 10; // mm gap for laser cutting
+    const separationDistance = diameter1Mm / 2 + diameter2Mm / 2 + gapBetweenGears;
+
+    // Position gear1 at left and gear2 at right with gap between
+    // We center the whole assembly around 0,0 for STL to be nice? 
+    // Or just start at 0,0.
+    // Let's center it.
+    const totalWidth = diameter1Mm + diameter2Mm + gapBetweenGears;
+    const gear1X = -totalWidth / 2 + diameter1Mm / 2;
+    const gear2X = gear1X + separationDistance;
+
+    const stl1 = generateSTL(state.gear1, { offsetX: gear1X, offsetY: 0 });
+    const stl2 = generateSTL(state.gear2, { offsetX: gear2X, offsetY: 0 });
+
+    // Concatenate the solids
+    const combinedSTL = stl1 + stl2;
+
+    downloadSTL(combinedSTL, 'Zahnrad_System_Beide.stl');
   };
 
   // Handle dragging the divider
@@ -321,6 +359,8 @@ const App: React.FC = () => {
         setState={setState}
         onDownload={handleDownload}
         onDownloadBoth={handleDownloadBoth}
+        onDownloadSTL={handleDownloadSTL}
+        onDownloadBothSTL={handleDownloadBothSTL}
         messages={currentChat.messages}
         chatName={currentChat.name}
         onSendMessage={handleSendMessage}
