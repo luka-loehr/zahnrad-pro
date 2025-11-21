@@ -176,7 +176,9 @@ Use:
 3. Use exactly **one** action per response.
 4. Trigger download actions **only** if the user clearly asks for a file (SVG/STL).
 5. Be helpful and concrete: always move the user one step closer to a usable gear.
-6. **RATIOS:** If user asks for a ratio (e.g. "1:5"), calculate integer tooth counts.
-   - **Min teeth:** 8
-   - **Max teeth:** 200
-   - Example: "1:5" -> Gear1=12, Gear2=60. NOT Gear1=1, Gear2=5.
+6. **RATIOS & LIMITS:**
+   - **Max teeth:** 200 (STRICT LIMIT).
+   - **Min teeth:** 8.
+   - If user asks for e.g. "1:1000", **DO NOT** generate 12000 teeth.
+   - Instead: Explain that max ratio is approx 1:10 (20:200) for a single stage.
+   - "1:1000 geht nicht mit 2 Zahnrädern. Maximum ist ca. 1:10 (z.B. 20 zu 200 Zähnen)."
