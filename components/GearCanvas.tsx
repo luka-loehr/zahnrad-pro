@@ -103,29 +103,6 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
     setTransform({ x: 0, y: 0, scale: initialScale });
   }, [maxDiameter]);
 
-  // Helper function to clamp transform to keep gears in view
-  const clampTransform = (t: { x: number; y: number; scale: number }) => {
-    // The viewBox is 1000x1000 centered at (0,0), so it extends from -500 to +500 in both directions
-    // We want to allow panning until the gears reach the edge of the viewBox
-    // Calculate how far we can pan based on the viewBox size and current scale
-
-    // At scale 1, we can pan ±500 units (to the edge of viewBox)
-    // At higher scales, we can pan more (because content is bigger)
-    // At lower scales, we can pan less (because content is smaller)
-    const viewBoxHalfSize = viewBoxSize / 2; // 500
-    const gearSystemRadius = maxDiameter / 2;
-
-    // Maximum pan distance: viewBox edge minus gear system radius, scaled by zoom
-    // This allows the gears to reach the edge but not go completely off-screen
-    const maxPan = (viewBoxHalfSize - gearSystemRadius / 2) / t.scale;
-
-    return {
-      x: Math.max(-maxPan, Math.min(maxPan, t.x)),
-      y: Math.max(-maxPan, Math.min(maxPan, t.y)),
-      scale: t.scale
-    };
-  };
-
   // --- Interaction Handlers ---
 
   useEffect(() => {
@@ -173,11 +150,11 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
         const newX = prev.x + mouseX_SVG * (1 / newScale - 1 / prev.scale);
         const newY = prev.y + mouseY_SVG * (1 / newScale - 1 / prev.scale);
 
-        return clampTransform({
+        return {
           x: newX,
           y: newY,
           scale: newScale
-        });
+        };
       });
     };
 
@@ -211,7 +188,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
     // If we move 10 pixels, and scale is 2, we want to move the content by 10 screen pixels.
     // In SVG space, that is (10 * svgUnitsPerPixel) / scale.
 
-    setTransform(prev => clampTransform({
+    setTransform(prev => ({
       ...prev,
       x: prev.x + (dx * svgUnitsPerPixel) / prev.scale,
       y: prev.y + (dy * svgUnitsPerPixel) / prev.scale
@@ -263,7 +240,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
       const containerWidth = containerRef.current?.clientWidth || 1;
       const svgUnitsPerPixel = viewBoxSize / containerWidth;
 
-      setTransform(prev => clampTransform({
+      setTransform(prev => ({
         ...prev,
         x: prev.x + (dx * svgUnitsPerPixel) / prev.scale,
         y: prev.y + (dy * svgUnitsPerPixel) / prev.scale
@@ -296,7 +273,7 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
         const newX = prev.x + centerX_SVG * (1 / newScale - 1 / prev.scale);
         const newY = prev.y + centerY_SVG * (1 / newScale - 1 / prev.scale);
 
-        return clampTransform({ x: newX, y: newY, scale: newScale });
+        return { x: newX, y: newY, scale: newScale };
       });
 
       lastTouchDistance.current = distance;
@@ -430,10 +407,10 @@ const GearCanvas: React.FC<GearCanvasProps> = ({ state, id }) => {
       {/* Controls Overlay */}
       <div className="absolute bottom-4 left-4 md:right-4 md:left-auto flex flex-col gap-2 items-start md:items-end pointer-events-none z-20">
         <div className="flex gap-2 pointer-events-auto">
-          <button onClick={() => setTransform(t => clampTransform({ ...t, scale: t.scale * 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom In">
+          <button onClick={() => setTransform(t => ({ ...t, scale: t.scale * 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom In">
             <ZoomIn className="w-6 h-6 md:w-5 md:h-5" />
           </button>
-          <button onClick={() => setTransform(t => clampTransform({ ...t, scale: t.scale / 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom Out">
+          <button onClick={() => setTransform(t => ({ ...t, scale: t.scale / 1.2 }))} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Zoom Out">
             <ZoomOut className="w-6 h-6 md:w-5 md:h-5" />
           </button>
           <button onClick={handleReset} className="bg-slate-800/90 active:bg-slate-700 p-3 md:p-2 rounded-lg text-white hover:bg-slate-700 transition-colors shadow-lg" title="Reset View">
