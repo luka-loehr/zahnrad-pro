@@ -109,6 +109,7 @@ export async function* streamMessageToGemini(
       systemInstruction: systemPrompt,
       responseMimeType: 'application/json',
       responseSchema: ACTION_RESPONSE_SCHEMA,
+      maxOutputTokens: 8192,
       // Explicitly disable thinking mode for gemini-2.5-flash (thinkingBudget > 0 would enable it)
       thinkingConfig: DISABLE_THINKING_CONFIG,
     }
@@ -187,6 +188,7 @@ export const sendMessageToGemini = async (message: string, chatHistory: ChatMess
       systemInstruction: systemPrompt,
       responseMimeType: 'application/json',
       responseSchema: ACTION_RESPONSE_SCHEMA,
+      maxOutputTokens: 8192,
       // Explicitly disable thinking mode for gemini-2.5-flash (thinkingBudget > 0 would enable it)
       thinkingConfig: DISABLE_THINKING_CONFIG,
     }

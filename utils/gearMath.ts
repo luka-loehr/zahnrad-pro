@@ -231,6 +231,7 @@ export const downloadSVG = (svgContent: string, filename: string) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 export const generateSTL = (gear: GearParams, options: { thickness?: number, offsetX?: number, offsetY?: number } = {}): string => {
@@ -344,5 +345,6 @@ export const downloadSTL = (stlContent: string, filename: string) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 

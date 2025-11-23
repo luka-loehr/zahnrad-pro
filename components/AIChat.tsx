@@ -75,16 +75,17 @@ const AIChat: React.FC<AIChatProps> = ({
             console.log("✅ Parsed JSON:", commands);
             console.log(`📋 Processing ${commands.length} command(s)`);
 
-            // Process commands
-            let messageToShow = '';
+            // Clear streaming message before processing commands
+            setStreamingMessage('');
 
-            // Process all commands
+            // Process all commands sequentially with delays
             for (const command of commands) {
-                // Collect the message from the first command (message is now required)
-                if (!messageToShow && command.message && command.message.trim()) {
-                    messageToShow = command.message;
+                // 1. Show message if present
+                if (command.message && command.message.trim()) {
+                    onSendMessage(command.message, 'model');
                 }
 
+                // 2. Execute action
                 // Handle name_chat action
                 if (command.action === 'name_chat' && command.chatName) {
                     onChatNamed(command.chatName);
@@ -149,18 +150,12 @@ const AIChat: React.FC<AIChatProps> = ({
                         return next;
                     });
                 }
-                // Handle respond action (pure conversational response)
-                // No additional action needed, just the message
-            }
 
-            // Clear streaming message and show final message
-            setStreamingMessage('');
-
-            // Show message (required by schema, so always present)
-            // Use first non-empty message, or first command's message if all are empty
-            const finalMessage = messageToShow || (commands.length > 0 ? commands[0].message : '');
-            if (finalMessage) {
-                onSendMessage(finalMessage, 'model');
+                // 3. Wait a bit before next action to simulate "agent loop"
+                // Only wait if there are more commands
+                if (commands.indexOf(command) < commands.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                }
             }
 
         } catch (error) {
@@ -227,24 +222,69 @@ const AIChat: React.FC<AIChatProps> = ({
             {/* Chat Messages */}
             <div
                 ref={chatContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/50"
+                className="flex-1 overflow-y-auto p-4 bg-slate-900/50"
                 style={{ WebkitOverflowScrolling: 'touch' }}
             >
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-lg p-3 text-sm ${msg.role === 'user'
-                            ? 'bg-brand-600 text-white'
-                            : msg.isError
-                                ? 'bg-red-900/50 border border-red-700 text-red-200'
-                                : 'bg-slate-700 text-slate-200'
-                            }`}>
-                            <MarkdownText text={msg.text} />
+                {messages.map((msg, idx) => {
+                    const isSameAsPrev = idx > 0 && messages[idx - 1].role === msg.role;
+                    // Check if next is same role OR if it's the last message and AI is loading (which counts as a 'model' message following it)
+                    const isSameAsNext = (idx < messages.length - 1 && messages[idx + 1].role === msg.role) ||
+                        (idx === messages.length - 1 && isAiLoading && msg.role === 'model');
+
+                    // Dynamic spacing
+                    // If it's the first message, no margin top.
+                    // If same as prev, small margin.
+                    // If different from prev, large margin.
+                    const marginTop = idx === 0 ? '' : (isSameAsPrev ? 'mt-1' : 'mt-4');
+
+                    // Dynamic border radius
+                    let borderRadiusClass = 'rounded-2xl';
+                    if (msg.role === 'user') {
+                        // User messages (Right side)
+                        if (isSameAsPrev && isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-tr-sm rounded-br-sm';
+                        else if (isSameAsPrev) borderRadiusClass = 'rounded-2xl rounded-tr-sm';
+                        else if (isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-br-sm';
+                        else borderRadiusClass = 'rounded-2xl rounded-br-sm'; // Standalone user message usually has a "tail" or just round
+                    } else {
+                        // Model messages (Left side)
+                        if (isSameAsPrev && isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-tl-sm rounded-bl-sm';
+                        else if (isSameAsPrev) borderRadiusClass = 'rounded-2xl rounded-tl-sm';
+                        else if (isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-bl-sm';
+                        else borderRadiusClass = 'rounded-2xl rounded-bl-sm'; // Standalone model message
+                    }
+
+                    // Refined standalone look:
+                    // If it's the start of a group, give it a normal corner.
+                    // If it's the end of a group, give it a sharp corner (tail effect) or normal?
+                    // Let's stick to the "spine" logic:
+                    // User spine is RIGHT. Model spine is LEFT.
+                    // If connected to PREV, flatten TOP spine corner.
+                    // If connected to NEXT, flatten BOTTOM spine corner.
+
+                    let roundedClass = 'rounded-2xl';
+                    if (msg.role === 'user') {
+                        roundedClass = `rounded-2xl ${isSameAsPrev ? 'rounded-tr-sm' : ''} ${isSameAsNext ? 'rounded-br-sm' : ''}`;
+                    } else {
+                        roundedClass = `rounded-2xl ${isSameAsPrev ? 'rounded-tl-sm' : ''} ${isSameAsNext ? 'rounded-bl-sm' : ''}`;
+                    }
+
+                    return (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${marginTop}`}>
+                            <div className={`max-w-[85%] p-3 text-sm ${roundedClass} ${msg.role === 'user'
+                                ? 'bg-brand-600 text-white'
+                                : msg.isError
+                                    ? 'bg-red-900/50 border border-red-700 text-red-200'
+                                    : 'bg-slate-700 text-slate-200'
+                                }`}>
+                                <MarkdownText text={msg.text} />
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {isAiLoading && (
-                    <div className="flex justify-start">
-                        <div className="bg-slate-700 rounded-lg p-3 text-sm text-slate-200">
+                    <div className={`flex justify-start ${messages.length > 0 && messages[messages.length - 1].role === 'model' ? 'mt-1' : 'mt-4'}`}>
+                        <div className={`bg-slate-700 p-3 text-sm text-slate-200 rounded-2xl ${messages.length > 0 && messages[messages.length - 1].role === 'model' ? 'rounded-tl-sm' : ''
+                            }`}>
                             {streamingMessage ? (
                                 <MarkdownText text={streamingMessage} />
                             ) : (
