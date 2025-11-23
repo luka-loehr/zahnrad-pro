@@ -168,7 +168,8 @@ Use:
 ### 5. Name the Chat
 
 **When:** First meaningful request in the session
-(Give the chat a short, useful name)
+
+**CRITICAL:** If the chat is still named "Neuer Chat" or "New Chat", you **MUST** call this action immediately with the first user request to give it a descriptive name.
 
 Use:
 
