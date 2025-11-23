@@ -3,6 +3,7 @@ import { GearSystemState, ChatMessage } from '../types';
 import { MessageSquare, Send, AlertCircle, Menu, Loader2, Plus } from 'lucide-react';
 import { streamMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
+import { TypewriterText } from './TypewriterText';
 
 interface AIChatProps {
     state: GearSystemState;
@@ -311,7 +312,16 @@ const AIChat: React.FC<AIChatProps> = ({
                                     ? 'bg-red-900/50 border border-red-700 text-red-200'
                                     : 'bg-slate-700 text-slate-200'
                                 }`}>
-                                <MarkdownText text={msg.text} />
+                                {(() => {
+                                    // Only animate if it's the very last message AND it's from the model AND not an error
+                                    const isLastMessage = idx === messages.length - 1;
+                                    const shouldAnimate = isLastMessage && msg.role === 'model' && !msg.isError;
+
+                                    if (shouldAnimate) {
+                                        return <TypewriterText text={msg.text} />;
+                                    }
+                                    return <MarkdownText text={msg.text} />;
+                                })()}
                             </div>
                         </div>
                     );
