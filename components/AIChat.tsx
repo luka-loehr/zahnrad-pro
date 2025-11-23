@@ -3,7 +3,7 @@ import { GearSystemState, ChatMessage } from '../types';
 import { MessageSquare, Send, AlertCircle, Menu, Loader2, Plus } from 'lucide-react';
 import { streamMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
-import { TypewriterText } from './TypewriterText';
+
 
 interface AIChatProps {
     state: GearSystemState;
@@ -61,98 +61,59 @@ const AIChat: React.FC<AIChatProps> = ({
         try {
             let fullResponse = '';
 
-            // Stream the response (now guaranteed to be valid JSON)
-            // Pass state only on first user message (when only welcome message exists)
-            const isFirstUserMessage = messages.length === 1;
-            for await (const chunk of streamMessageToGemini(userMsg, messages, isFirstUserMessage ? state : undefined)) {
-                fullResponse += chunk;
-                setStreamingMessage(fullResponse);
-            }
-
-            console.log("🤖 AI Full Response:", fullResponse);
-
-            // Parse the structured JSON response (guaranteed to be valid)
-            const commands = JSON.parse(fullResponse);
-            console.log("✅ Parsed JSON:", commands);
-            console.log(`📋 Processing ${commands.length} command(s)`);
-
-            // Clear streaming message before processing commands
-            setStreamingMessage('');
-
-            // Process all commands sequentially with delays
-            for (const command of commands) {
-                // 1. Show message if present
-                if (command.message && command.message.trim()) {
-                    onSendMessage(command.message, 'model');
-                }
-
-                // 2. Execute action
-                // Handle name_chat action
-                if (command.action === 'name_chat' && command.chatName) {
-                    onChatNamed(command.chatName);
-                }
-                // Handle download_svg action
-                else if (command.action === 'download_svg' && command.gear) {
-                    if (command.gear === 'both') {
+            // Define tool executors to pass to the service
+            const toolExecutors = {
+                download_svg: (args: { gear: "blue" | "red" | "both" }) => {
+                    if (args.gear === 'both') {
                         onDownloadBoth();
                         console.log('⬇️ Downloaded both gears together (SVG)');
                     } else {
-                        const gearIndex = command.gear === 'blue' ? 1 : 2;
+                        const gearIndex = args.gear === 'blue' ? 1 : 2;
                         onDownload(gearIndex);
-                        console.log(`⬇️ Downloaded ${command.gear} gear (SVG)`);
+                        console.log(`⬇️ Downloaded ${args.gear} gear (SVG)`);
                     }
-                }
-                // Handle download_stl action
-                else if (command.action === 'download_stl' && command.gear) {
-                    if (command.gear === 'both') {
+                },
+                download_stl: (args: { gear: "blue" | "red" | "both" }) => {
+                    if (args.gear === 'both') {
                         onDownloadBothSTL();
                         console.log('⬇️ Downloaded both gears together (STL)');
                     } else {
-                        const gearIndex = command.gear === 'blue' ? 1 : 2;
+                        const gearIndex = args.gear === 'blue' ? 1 : 2;
                         onDownloadSTL(gearIndex);
-                        console.log(`⬇️ Downloaded ${command.gear} gear (STL)`);
+                        console.log(`⬇️ Downloaded ${args.gear} gear (STL)`);
                     }
-                }
-                // Handle set_speed action
-                else if (command.action === 'set_speed' && command.speed !== undefined) {
-                    // Validate speed: minimum is 3
-                    const validatedSpeed = Math.max(3, command.speed);
-                    setState(prev => ({ ...prev, speed: validatedSpeed }));
-                    console.log(`⚡ Speed set to ${validatedSpeed}`);
-                }
-                // Handle update_params action (only gear parameters, no speed)
-                else if (command.action === 'update_params' && command.params) {
+                },
+                update_params: (args: { gear1?: any, gear2?: any }) => {
                     setState(prev => {
                         const next = { ...prev };
-                        const p = command.params;
 
-                        // Helper function to validate and update gear params
                         const updateGear = (gear: typeof next.gear1, updates: any) => {
                             if (!updates) return gear;
-
                             const updated = { ...gear, ...updates };
-
-                            // Default centerHoleDiameter if not set
                             if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
-                                updated.centerHoleDiameter = 5; // mm - smaller default for laser cutting
+                                updated.centerHoleDiameter = 5;
                             }
-
                             return updated;
                         };
 
-                        if (p.gear1) next.gear1 = updateGear(next.gear1, p.gear1);
-                        if (p.gear2) next.gear2 = updateGear(next.gear2, p.gear2);
+                        if (args.gear1) next.gear1 = updateGear(next.gear1, args.gear1);
+                        if (args.gear2) next.gear2 = updateGear(next.gear2, args.gear2);
 
-                        // Recalculate ratio if teeth changed
-                        if (p.gear1?.toothCount || p.gear2?.toothCount) {
+                        if (args.gear1?.toothCount || args.gear2?.toothCount) {
                             next.ratio = next.gear2.toothCount / next.gear1.toothCount;
                         }
-
                         return next;
                     });
-                }
-                // Handle get_params action (Show technical summary)
-                else if (command.action === 'get_params') {
+                },
+                set_speed: (args: { speed: number }) => {
+                    const validatedSpeed = Math.max(3, args.speed);
+                    setState(prev => ({ ...prev, speed: validatedSpeed }));
+                    console.log(`⚡ Speed set to ${validatedSpeed}`);
+                },
+                name_chat: (args: { name: string }) => {
+                    onChatNamed(args.name);
+                },
+                get_params: () => {
                     // Calculate derived metrics
                     const getMetrics = (gear: typeof state.gear1) => {
                         const pitchDiameter = gear.module * gear.toothCount;
@@ -164,7 +125,7 @@ const AIChat: React.FC<AIChatProps> = ({
                     const g1 = getMetrics(state.gear1);
                     const g2 = getMetrics(state.gear2);
 
-                    const summary = `**⚙️ Technische Daten:**
+                    return `**⚙️ Technische Daten:**
 
 **Blaues Zahnrad (Antrieb):**
 • Zähne: ${state.gear1.toothCount}
@@ -183,15 +144,21 @@ const AIChat: React.FC<AIChatProps> = ({
 **System:**
 • Übersetzung: 1:${state.ratio.toFixed(2)}
 • Achsabstand: ${((g1.pitchDiameter + g2.pitchDiameter) / 2).toFixed(2)}mm`;
-
-                    onSendMessage(summary, 'model');
                 }
+            };
 
-                // 3. Wait a bit before next action to simulate "agent loop"
-                // Only wait if there are more commands
-                if (commands.indexOf(command) < commands.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
+            // Stream the response
+            const isFirstUserMessage = messages.length === 1;
+            for await (const chunk of streamMessageToGemini(userMsg, messages, isFirstUserMessage ? state : state, toolExecutors)) {
+                fullResponse += chunk;
+                setStreamingMessage(fullResponse);
+            }
+
+            console.log("🤖 AI Full Response:", fullResponse);
+
+            // Add the final full message to chat history
+            if (fullResponse.trim()) {
+                onSendMessage(fullResponse, 'model');
             }
 
         } catch (error) {
@@ -200,6 +167,7 @@ const AIChat: React.FC<AIChatProps> = ({
             onSendMessage('Es gab ein Problem, bitte warte einen Moment und versuche es dann noch einmal.', 'model', true);
         } finally {
             setIsAiLoading(false);
+            setStreamingMessage('');
         }
     };
 
@@ -268,9 +236,6 @@ const AIChat: React.FC<AIChatProps> = ({
                         (idx === messages.length - 1 && isAiLoading && msg.role === 'model');
 
                     // Dynamic spacing
-                    // If it's the first message, no margin top.
-                    // If same as prev, small margin.
-                    // If different from prev, large margin.
                     const marginTop = idx === 0 ? '' : (isSameAsPrev ? 'mt-1' : 'mt-4');
 
                     // Dynamic border radius
@@ -280,23 +245,16 @@ const AIChat: React.FC<AIChatProps> = ({
                         if (isSameAsPrev && isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-tr-sm rounded-br-sm';
                         else if (isSameAsPrev) borderRadiusClass = 'rounded-2xl rounded-tr-sm';
                         else if (isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-br-sm';
-                        else borderRadiusClass = 'rounded-2xl rounded-br-sm'; // Standalone user message usually has a "tail" or just round
+                        else borderRadiusClass = 'rounded-2xl rounded-br-sm';
                     } else {
                         // Model messages (Left side)
                         if (isSameAsPrev && isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-tl-sm rounded-bl-sm';
                         else if (isSameAsPrev) borderRadiusClass = 'rounded-2xl rounded-tl-sm';
                         else if (isSameAsNext) borderRadiusClass = 'rounded-2xl rounded-bl-sm';
-                        else borderRadiusClass = 'rounded-2xl rounded-bl-sm'; // Standalone model message
+                        else borderRadiusClass = 'rounded-2xl rounded-bl-sm';
                     }
 
-                    // Refined standalone look:
-                    // If it's the start of a group, give it a normal corner.
-                    // If it's the end of a group, give it a sharp corner (tail effect) or normal?
-                    // Let's stick to the "spine" logic:
-                    // User spine is RIGHT. Model spine is LEFT.
-                    // If connected to PREV, flatten TOP spine corner.
-                    // If connected to NEXT, flatten BOTTOM spine corner.
-
+                    // Refined standalone look
                     let roundedClass = 'rounded-2xl';
                     if (msg.role === 'user') {
                         roundedClass = `rounded-2xl ${isSameAsPrev ? 'rounded-tr-sm' : ''} ${isSameAsNext ? 'rounded-br-sm' : ''}`;
@@ -312,16 +270,7 @@ const AIChat: React.FC<AIChatProps> = ({
                                     ? 'bg-red-900/50 border border-red-700 text-red-200'
                                     : 'bg-slate-700 text-slate-200'
                                 }`}>
-                                {(() => {
-                                    // Only animate if it's the very last message AND it's from the model AND not an error
-                                    const isLastMessage = idx === messages.length - 1;
-                                    const shouldAnimate = isLastMessage && msg.role === 'model' && !msg.isError;
-
-                                    if (shouldAnimate) {
-                                        return <TypewriterText text={msg.text} />;
-                                    }
-                                    return <MarkdownText text={msg.text} />;
-                                })()}
+                                <MarkdownText text={msg.text} />
                             </div>
                         </div>
                     );
@@ -330,26 +279,14 @@ const AIChat: React.FC<AIChatProps> = ({
                     <div className={`flex justify-start ${messages.length > 0 && messages[messages.length - 1].role === 'model' ? 'mt-1' : 'mt-4'}`}>
                         <div className={`bg-slate-700 p-3 text-sm text-slate-200 rounded-2xl ${messages.length > 0 && messages[messages.length - 1].role === 'model' ? 'rounded-tl-sm' : ''
                             }`}>
-                            {(() => {
-                                const isToolExecution = streamingMessage && (
-                                    streamingMessage.includes('update_params') ||
-                                    streamingMessage.includes('download_') ||
-                                    streamingMessage.includes('set_speed') ||
-                                    streamingMessage.includes('get_params')
-                                );
-
-                                return isToolExecution ? (
-                                    <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        <span>Verarbeite Aktionen...</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        <span>Denke nach...</span>
-                                    </div>
-                                );
-                            })()}
+                            {streamingMessage ? (
+                                <MarkdownText text={streamingMessage} />
+                            ) : (
+                                <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Denke nach...</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

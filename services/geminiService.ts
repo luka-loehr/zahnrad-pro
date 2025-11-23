@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, FunctionDeclaration, Tool } from "@google/genai";
 import { SYSTEM_PROMPT } from '../constants';
 import { ChatMessage, GearSystemState } from '../types';
 
@@ -11,62 +11,90 @@ const truncateForLog = (input: string) => {
   return `${input.slice(0, MAX_LOG_LENGTH)}…`;
 };
 
-// Define the response schema for structured outputs
-const ACTION_RESPONSE_SCHEMA = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-      action: {
-        type: Type.STRING,
-        enum: ['download_svg', 'download_stl', 'update_params', 'set_speed', 'name_chat', 'respond', 'get_params']
-      },
-      gear: {
-        type: Type.STRING,
-        enum: ['blue', 'red', 'both'],
-        nullable: true
-      },
-      message: {
-        type: Type.STRING
-      },
-      chatName: {
-        type: Type.STRING,
-        nullable: true
-      },
-      speed: {
-        type: Type.NUMBER,
-        nullable: true
-      },
-      params: {
+// --- Tool Definitions ---
+
+const tools: Tool[] = [{
+  functionDeclarations: [
+    {
+      name: "download_svg",
+      description: "Trigger a download of the gear(s) as SVG for laser cutting.",
+      parameters: {
         type: Type.OBJECT,
-        nullable: true,
+        properties: {
+          gear: { type: Type.STRING, enum: ["blue", "red", "both"], description: "Which gear to download." }
+        },
+        required: ["gear"]
+      }
+    },
+    {
+      name: "download_stl",
+      description: "Trigger a download of the gear(s) as STL for 3D printing.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          gear: { type: Type.STRING, enum: ["blue", "red", "both"], description: "Which gear to download." }
+        },
+        required: ["gear"]
+      }
+    },
+    {
+      name: "update_params",
+      description: "Update the parameters of the gears (teeth, module, hole).",
+      parameters: {
+        type: Type.OBJECT,
         properties: {
           gear1: {
             type: Type.OBJECT,
-            nullable: true,
             properties: {
-              toothCount: { type: Type.NUMBER, nullable: true },
-              module: { type: Type.NUMBER, nullable: true },
-              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
+              toothCount: { type: Type.NUMBER },
+              module: { type: Type.NUMBER },
+              centerHoleDiameter: { type: Type.NUMBER }
             }
           },
           gear2: {
             type: Type.OBJECT,
-            nullable: true,
             properties: {
-              toothCount: { type: Type.NUMBER, nullable: true },
-              module: { type: Type.NUMBER, nullable: true },
-              centerHoleDiameter: { type: Type.NUMBER, nullable: true }
+              toothCount: { type: Type.NUMBER },
+              module: { type: Type.NUMBER },
+              centerHoleDiameter: { type: Type.NUMBER }
             }
-          },
+          }
         }
       }
     },
-    required: ['action']
-  }
-};
+    {
+      name: "set_speed",
+      description: "Set the animation speed.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          speed: { type: Type.NUMBER, description: "Speed value (min 3)." }
+        },
+        required: ["speed"]
+      }
+    },
+    {
+      name: "name_chat",
+      description: "Give the chat session a name.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING, description: "Short name for the chat." }
+        },
+        required: ["name"]
+      }
+    },
+    {
+      name: "get_params",
+      description: "Get the current technical parameters of the gears to display to the user.",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {}
+      }
+    }
+  ]
+}];
 
-// Generate compact status string for current state
 // Generate compact status string for current state
 const getStatusString = (state: GearSystemState): string => {
   // Calculate derived metrics for context
@@ -88,163 +116,144 @@ Rot (Abtrieb): ${state.gear2.toothCount} Zähne, ${state.gear2.module}mm Modul, 
 Übersetzung: ${state.ratio.toFixed(2)}, Geschwindigkeit: ${state.speed} U/min`;
 };
 
-// Streaming version - yields text chunks as they arrive
+// --- Streaming Service ---
+
+export type ToolExecutors = {
+  download_svg: (args: { gear: "blue" | "red" | "both" }) => void;
+  download_stl: (args: { gear: "blue" | "red" | "both" }) => void;
+  update_params: (args: { gear1?: any, gear2?: any }) => void;
+  set_speed: (args: { speed: number }) => void;
+  name_chat: (args: { name: string }) => void;
+  get_params: () => string; // Returns the summary string
+};
+
 export async function* streamMessageToGemini(
   message: string,
   chatHistory: ChatMessage[] = [],
-  currentState?: GearSystemState
+  currentState: GearSystemState,
+  toolExecutors: ToolExecutors
 ): AsyncGenerator<string, void, unknown> {
   if (!process.env.API_KEY) {
-    console.error('[Gemini] API key missing before request dispatch.');
     throw new Error("API Key not configured");
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  // Build conversation history for context
-  // Skip the first message (welcome message) and format for Gemini
+  // 1. Prepare History
   const history = chatHistory.slice(1).map(msg => ({
     role: msg.role === 'model' ? 'model' : 'user',
     parts: [{ text: msg.text }]
   }));
 
-  // Always add current state if provided (compact status as footer)
-  const systemPrompt = currentState
-    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
-    : SYSTEM_PROMPT;
+  // 2. Prepare System Prompt with Context
+  const systemPrompt = `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`;
 
-  const payload = {
-    model: MODEL_ID,
-    contents: [
-      ...history,
-      { role: 'user' as const, parts: [{ text: message }] }
-    ],
-    config: {
-      systemInstruction: systemPrompt,
-      responseMimeType: 'application/json',
-      responseSchema: ACTION_RESPONSE_SCHEMA,
-      maxOutputTokens: 8192,
-      // Explicitly disable thinking mode for gemini-2.5-flash (thinkingBudget > 0 would enable it)
-      thinkingConfig: DISABLE_THINKING_CONFIG,
-    }
+  // 3. Initial Request
+  // We use 'any' for parts to avoid strict type issues with the SDK's Part type during this migration
+  let currentContents: any[] = [
+    ...history,
+    { role: 'user', parts: [{ text: message }] }
+  ];
+
+  const config = {
+    systemInstruction: systemPrompt,
+    tools: tools,
+    thinkingConfig: DISABLE_THINKING_CONFIG,
   };
 
-  console.debug('[Gemini] Dispatching streaming request', {
-    model: MODEL_ID,
-    hasApiKey: true,
-    promptPreview: truncateForLog(message),
-    promptLength: message.length,
-    historyLength: history.length
-  });
+  console.debug('[Gemini] Starting stream loop', { message: truncateForLog(message) });
 
-  const requestStartedAt = Date.now();
+  while (true) {
+    const stream = await ai.models.generateContentStream({
+      model: MODEL_ID,
+      contents: currentContents,
+      config: config
+    });
 
-  try {
-    const stream = await ai.models.generateContentStream(payload);
+    let fullTextResponse = "";
+    let functionCallPart: any = null;
 
     for await (const chunk of stream) {
-      const chunkText = chunk.text;
-      if (chunkText) {
-        yield chunkText;
+      // 1. Yield Text immediately
+      // chunk.text is a property, not a function in some versions, or a function in others.
+      // The error said "Type 'String' has no call signatures", so it's a property.
+      const text = chunk.text;
+      if (text) {
+        fullTextResponse += text;
+        yield text;
+      }
+
+      // 2. Check for Function Calls
+      // The error said "Type 'FunctionCall[]' has no call signatures", so it's a property.
+      const calls = chunk.functionCalls;
+      if (calls && calls.length > 0) {
+        functionCallPart = calls[0];
+        console.log("[Gemini] Tool Call Detected:", functionCallPart.name, functionCallPart.args);
       }
     }
 
-    const durationMs = Date.now() - requestStartedAt;
-    console.debug('[Gemini] Stream completed', { durationMs });
-
-  } catch (error: any) {
-    const durationMs = Date.now() - requestStartedAt;
-    const status = error?.sdkHttpResponse?.status;
-    const statusText = error?.sdkHttpResponse?.statusText;
-    const requestId = error?.sdkHttpResponse?.headers?.['x-request-id'] ?? error?.sdkHttpResponse?.headers?.get?.('x-request-id');
-
-    console.error('[Gemini] API Error', {
-      durationMs,
-      status,
-      statusText,
-      requestId: requestId || null,
-      messageSnippet: truncateForLog(message),
-      errorMessage: error?.message ?? 'Unknown error'
-    }, error);
-
-    throw error;
-  }
-}
-
-// Non-streaming version (kept for backwards compatibility)
-export const sendMessageToGemini = async (message: string, chatHistory: ChatMessage[] = [], currentState?: GearSystemState): Promise<string> => {
-  if (!process.env.API_KEY) {
-    console.error('[Gemini] API key missing before request dispatch.');
-    throw new Error("API Key not configured");
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  // Build conversation history for context
-  // Skip the first message (welcome message) and format for Gemini
-  const history = chatHistory.slice(1).map(msg => ({
-    role: msg.role === 'model' ? 'model' : 'user',
-    parts: [{ text: msg.text }]
-  }));
-
-  // Always add current state if provided (compact status as footer)
-  const systemPrompt = currentState
-    ? `${SYSTEM_PROMPT}\n\n${getStatusString(currentState)}`
-    : SYSTEM_PROMPT;
-
-  const payload = {
-    model: MODEL_ID,
-    contents: [
-      ...history,
-      { role: 'user' as const, parts: [{ text: message }] }
-    ],
-    config: {
-      systemInstruction: systemPrompt,
-      responseMimeType: 'application/json',
-      responseSchema: ACTION_RESPONSE_SCHEMA,
-      maxOutputTokens: 8192,
-      // Explicitly disable thinking mode for gemini-2.5-flash (thinkingBudget > 0 would enable it)
-      thinkingConfig: DISABLE_THINKING_CONFIG,
+    if (!functionCallPart) {
+      break;
     }
-  };
 
-  console.debug('[Gemini] Dispatching generateContent request', {
-    model: MODEL_ID,
-    hasApiKey: true,
-    promptPreview: truncateForLog(message),
-    promptLength: message.length,
-    historyLength: history.length
-  });
+    const { name, args } = functionCallPart;
+    let result: any = { success: true };
 
-  const requestStartedAt = Date.now();
+    try {
+      switch (name) {
+        case 'download_svg':
+          toolExecutors.download_svg(args as any);
+          result = { output: "Download started." };
+          break;
+        case 'download_stl':
+          toolExecutors.download_stl(args as any);
+          result = { output: "Download started." };
+          break;
+        case 'update_params':
+          toolExecutors.update_params(args as any);
+          result = { output: "Parameters updated." };
+          break;
+        case 'set_speed':
+          toolExecutors.set_speed(args as any);
+          result = { output: `Speed set to ${args.speed}` };
+          break;
+        case 'name_chat':
+          toolExecutors.name_chat(args as any);
+          result = { output: `Chat named: ${args.name}` };
+          break;
+        case 'get_params':
+          const paramsSummary = toolExecutors.get_params();
+          result = { output: paramsSummary };
+          break;
+        default:
+          console.warn("Unknown tool:", name);
+          result = { error: "Unknown tool" };
+      }
+    } catch (e: any) {
+      console.error("Tool execution failed:", e);
+      result = { error: e.message };
+    }
 
-  try {
-    const response = await ai.models.generateContent(payload);
-    const durationMs = Date.now() - requestStartedAt;
-
-    console.debug('[Gemini] Response received', {
-      durationMs,
-      hasText: Boolean(response.text),
-      textPreview: response.text ? truncateForLog(response.text) : null,
-      usage: (response as any)?.usageMetadata ?? null
+    // Append the model's tool call
+    currentContents.push({
+      role: 'model',
+      parts: [
+        { text: fullTextResponse },
+        { functionCall: { name, args } }
+      ]
     });
 
-    return response.text || "No response generated.";
-  } catch (error: any) {
-    const durationMs = Date.now() - requestStartedAt;
-    const status = error?.sdkHttpResponse?.status;
-    const statusText = error?.sdkHttpResponse?.statusText;
-    const requestId = error?.sdkHttpResponse?.headers?.['x-request-id'] ?? error?.sdkHttpResponse?.headers?.get?.('x-request-id');
+    // Append the tool response
+    currentContents.push({
+      role: 'user',
+      parts: [{
+        functionResponse: {
+          name: name,
+          response: { result: result }
+        }
+      }]
+    });
 
-    console.error('[Gemini] API Error', {
-      durationMs,
-      status,
-      statusText,
-      requestId: requestId || null,
-      messageSnippet: truncateForLog(message),
-      errorMessage: error?.message ?? 'Unknown error'
-    }, error);
-
-    throw error;
+    console.log("[Gemini] Tool Executed. Looping back with result...");
   }
-};
+}
