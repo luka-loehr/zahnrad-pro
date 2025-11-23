@@ -19,7 +19,7 @@ const ACTION_RESPONSE_SCHEMA = {
     properties: {
       action: {
         type: Type.STRING,
-        enum: ['download_svg', 'download_stl', 'update_params', 'set_speed', 'name_chat', 'respond']
+        enum: ['download_svg', 'download_stl', 'update_params', 'set_speed', 'name_chat', 'respond', 'get_params']
       },
       gear: {
         type: Type.STRING,
@@ -67,10 +67,24 @@ const ACTION_RESPONSE_SCHEMA = {
 };
 
 // Generate compact status string for current state
+// Generate compact status string for current state
 const getStatusString = (state: GearSystemState): string => {
+  // Calculate derived metrics for context
+  const getGearMetrics = (gear: typeof state.gear1) => {
+    const pitchDiameter = gear.module * gear.toothCount;
+    const addendum = gear.module * (1 + gear.profileShift);
+    const outerDiameter = pitchDiameter + (2 * addendum);
+    return { pitchDiameter, outerDiameter };
+  };
+
+  const g1 = getGearMetrics(state.gear1);
+  const g2 = getGearMetrics(state.gear2);
+
   return `**AKTUELLE WERTE:**
-Blau: ${state.gear1.toothCount} Zähne, ${state.gear1.module}mm Modul, ${state.gear1.centerHoleDiameter}mm Bohrung
-Rot: ${state.gear2.toothCount} Zähne, ${state.gear2.module}mm Modul, ${state.gear2.centerHoleDiameter}mm Bohrung
+Blau (Antrieb): ${state.gear1.toothCount} Zähne, ${state.gear1.module}mm Modul, ${state.gear1.centerHoleDiameter}mm Bohrung
+  -> Außendurchmesser: ${g1.outerDiameter.toFixed(2)}mm, Teilkreis: ${g1.pitchDiameter.toFixed(2)}mm
+Rot (Abtrieb): ${state.gear2.toothCount} Zähne, ${state.gear2.module}mm Modul, ${state.gear2.centerHoleDiameter}mm Bohrung
+  -> Außendurchmesser: ${g2.outerDiameter.toFixed(2)}mm, Teilkreis: ${g2.pitchDiameter.toFixed(2)}mm
 Übersetzung: ${state.ratio.toFixed(2)}, Geschwindigkeit: ${state.speed} U/min`;
 };
 

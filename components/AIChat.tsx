@@ -150,6 +150,41 @@ const AIChat: React.FC<AIChatProps> = ({
                         return next;
                     });
                 }
+                // Handle get_params action (Show technical summary)
+                else if (command.action === 'get_params') {
+                    // Calculate derived metrics
+                    const getMetrics = (gear: typeof state.gear1) => {
+                        const pitchDiameter = gear.module * gear.toothCount;
+                        const addendum = gear.module * (1 + gear.profileShift);
+                        const outerDiameter = pitchDiameter + (2 * addendum);
+                        return { pitchDiameter, outerDiameter };
+                    };
+
+                    const g1 = getMetrics(state.gear1);
+                    const g2 = getMetrics(state.gear2);
+
+                    const summary = `**⚙️ Technische Daten:**
+
+**Blaues Zahnrad (Antrieb):**
+• Zähne: ${state.gear1.toothCount}
+• Modul: ${state.gear1.module}mm
+• Bohrung: ${state.gear1.centerHoleDiameter}mm
+• Teilkreis-Ø: ${g1.pitchDiameter.toFixed(2)}mm
+• Außen-Ø: ${g1.outerDiameter.toFixed(2)}mm
+
+**Rotes Zahnrad (Abtrieb):**
+• Zähne: ${state.gear2.toothCount}
+• Modul: ${state.gear2.module}mm
+• Bohrung: ${state.gear2.centerHoleDiameter}mm
+• Teilkreis-Ø: ${g2.pitchDiameter.toFixed(2)}mm
+• Außen-Ø: ${g2.outerDiameter.toFixed(2)}mm
+
+**System:**
+• Übersetzung: 1:${state.ratio.toFixed(2)}
+• Achsabstand: ${((g1.pitchDiameter + g2.pitchDiameter) / 2).toFixed(2)}mm`;
+
+                    onSendMessage(summary, 'model');
+                }
 
                 // 3. Wait a bit before next action to simulate "agent loop"
                 // Only wait if there are more commands
@@ -285,14 +320,26 @@ const AIChat: React.FC<AIChatProps> = ({
                     <div className={`flex justify-start ${messages.length > 0 && messages[messages.length - 1].role === 'model' ? 'mt-1' : 'mt-4'}`}>
                         <div className={`bg-slate-700 p-3 text-sm text-slate-200 rounded-2xl ${messages.length > 0 && messages[messages.length - 1].role === 'model' ? 'rounded-tl-sm' : ''
                             }`}>
-                            {streamingMessage ? (
-                                <MarkdownText text={streamingMessage} />
-                            ) : (
-                                <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Denke nach...</span>
-                                </div>
-                            )}
+                            {(() => {
+                                const isToolExecution = streamingMessage && (
+                                    streamingMessage.includes('update_params') ||
+                                    streamingMessage.includes('download_') ||
+                                    streamingMessage.includes('set_speed') ||
+                                    streamingMessage.includes('get_params')
+                                );
+
+                                return isToolExecution ? (
+                                    <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Verarbeite Aktionen...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-slate-400 italic animate-slow-pulse">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Denke nach...</span>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 )}
