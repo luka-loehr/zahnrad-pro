@@ -154,7 +154,7 @@ const AIChat: React.FC<AIChatProps> = ({
                 // 3. Wait a bit before next action to simulate "agent loop"
                 // Only wait if there are more commands
                 if (commands.indexOf(command) < commands.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 800));
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
             }
 

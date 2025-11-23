@@ -62,7 +62,7 @@ const ACTION_RESPONSE_SCHEMA = {
         }
       }
     },
-    required: ['action', 'message']
+    required: ['action']
   }
 };
 
