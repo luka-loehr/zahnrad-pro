@@ -3,7 +3,7 @@ import AIChat from './components/AIChat';
 import ChatSidebar from './components/ChatSidebar';
 import GearCanvas from './components/GearCanvas';
 import { GearSystemState, ChatSession, ChatList, ChatMessage } from './types';
-import { INITIAL_GEAR_1, INITIAL_GEAR_2 } from './constants';
+import { DEFAULT_ANIMATION_SPEED, INITIAL_GEAR_1, INITIAL_GEAR_2 } from './constants';
 import { generateGearPath, downloadSVG, calculateCenterDistance, generateSTL, downloadSTL } from './utils/gearMath';
 
 const CHAT_SESSIONS_KEY = 'zahnrad-pro-chat-sessions';
@@ -32,7 +32,7 @@ const App: React.FC = () => {
     distance: 0,
     ratio: INITIAL_GEAR_2.toothCount / INITIAL_GEAR_1.toothCount,
     lockedRatio: true,
-    speed: 10,
+    speed: DEFAULT_ANIMATION_SPEED,
     isPlaying: true,
     rendererScale: 1, // 1 Kachel = 1 cm
     svgScale: 1,
