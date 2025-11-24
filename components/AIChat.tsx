@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { GearSystemState, ChatMessage } from '../types';
+import {
+    ABSOLUTE_MAX_ANIMATION_SPEED,
+    DEFAULT_ANIMATION_SPEED,
+    MAX_CENTER_HOLE_DIAMETER,
+    MAX_MODULE,
+    MAX_TOOTH_COUNT,
+    MIN_ANIMATION_SPEED,
+    MIN_CENTER_HOLE_DIAMETER,
+    MIN_MODULE,
+    MIN_TOOTH_COUNT,
+    SOFT_MAX_ANIMATION_SPEED
+} from '../constants';
 import { MessageSquare, Send, AlertCircle, Menu, Loader2, Plus } from 'lucide-react';
 import { streamMessageToGemini } from '../services/geminiService';
 import { MarkdownText } from './MarkdownText';
@@ -63,8 +75,7 @@ const AIChat: React.FC<AIChatProps> = ({
 
             // Stream the response (now guaranteed to be valid JSON)
             // Pass state only on first user message (when only welcome message exists)
-            const isFirstUserMessage = messages.length === 1;
-            for await (const chunk of streamMessageToGemini(userMsg, messages, isFirstUserMessage ? state : undefined)) {
+            for await (const chunk of streamMessageToGemini(userMsg, messages, state)) {
                 fullResponse += chunk;
                 setStreamingMessage(fullResponse);
             }
@@ -115,10 +126,20 @@ const AIChat: React.FC<AIChatProps> = ({
                 }
                 // Handle set_speed action
                 else if (command.action === 'set_speed' && command.speed !== undefined) {
-                    // Validate speed: minimum is 3
-                    const validatedSpeed = Math.max(3, command.speed);
-                    setState(prev => ({ ...prev, speed: validatedSpeed }));
-                    console.log(`⚡ Speed set to ${validatedSpeed}`);
+                    const requestedSpeed = command.speed ?? DEFAULT_ANIMATION_SPEED;
+                    const clampedSpeed = Math.min(
+                        Math.max(requestedSpeed, MIN_ANIMATION_SPEED),
+                        ABSOLUTE_MAX_ANIMATION_SPEED
+                    );
+
+                    if (clampedSpeed > SOFT_MAX_ANIMATION_SPEED) {
+                        console.warn(
+                            `⚠️ Requested speed ${requestedSpeed} exceeds soft cap ${SOFT_MAX_ANIMATION_SPEED}, applying hard cap ${ABSOLUTE_MAX_ANIMATION_SPEED}`
+                        );
+                    }
+
+                    setState(prev => ({ ...prev, speed: clampedSpeed }));
+                    console.log(`⚡ Speed set to ${clampedSpeed}`);
                 }
                 // Handle update_params action (only gear parameters, no speed)
                 else if (command.action === 'update_params' && command.params) {
@@ -127,10 +148,27 @@ const AIChat: React.FC<AIChatProps> = ({
                         const p = command.params;
 
                         // Helper function to validate and update gear params
+                        const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
                         const updateGear = (gear: typeof next.gear1, updates: any) => {
                             if (!updates) return gear;
 
                             const updated = { ...gear, ...updates };
+
+                            if (updates.toothCount !== undefined) {
+                                updated.toothCount = clamp(updates.toothCount, MIN_TOOTH_COUNT, MAX_TOOTH_COUNT);
+                            }
+
+                            if (updates.module !== undefined) {
+                                updated.module = clamp(updates.module, MIN_MODULE, MAX_MODULE);
+                            }
+
+                            if (updates.centerHoleDiameter !== undefined) {
+                                updated.centerHoleDiameter = clamp(
+                                    updates.centerHoleDiameter,
+                                    MIN_CENTER_HOLE_DIAMETER,
+                                    MAX_CENTER_HOLE_DIAMETER
+                                );
+                            }
 
                             // Default centerHoleDiameter if not set
                             if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
