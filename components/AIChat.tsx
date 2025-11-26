@@ -55,6 +55,7 @@ const AIChat: React.FC<AIChatProps> = ({
     const MAX_COMMANDS = 8;
     const MAX_RESPONSE_CHARS = 20000;
     const STREAM_TIMEOUT_MS = 30000;
+    const TOOL_CALL_TIMEOUT_MS = 5000;
     const GENERIC_ERROR_MESSAGE = 'Es gab ein Problem, bitte warte einen Moment und versuche es dann noch einmal.';
     const ALLOWED_ACTIONS = new Set([
         'download_svg',
@@ -120,6 +121,24 @@ const AIChat: React.FC<AIChatProps> = ({
         });
 
         return validated;
+    };
+
+    const withToolTimeout = async (label: string, fn: () => Promise<void> | void) => {
+        let timeoutId: number | undefined;
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutId = window.setTimeout(() => {
+                reject(new Error(`Tool-Aufruf "${label}" hat länger als ${TOOL_CALL_TIMEOUT_MS / 1000} Sekunden gedauert.`));
+            }, TOOL_CALL_TIMEOUT_MS);
+        });
+
+        try {
+            await Promise.race([Promise.resolve().then(fn), timeoutPromise]);
+        } finally {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        }
     };
 
     const handleAiSubmit = async (e: React.FormEvent) => {
@@ -189,113 +208,115 @@ const AIChat: React.FC<AIChatProps> = ({
                 }
 
                 // 2. Execute action
-                // Handle name_chat action
-                if (command.action === 'name_chat' && command.chatName) {
-                    onChatNamed(command.chatName);
-                }
-                // Handle download_svg action
-                else if (command.action === 'download_svg' && command.gear) {
-                    if (command.gear === 'both') {
-                        onDownloadBoth();
-                        console.log('⬇️ Downloaded both gears together (SVG)');
-                    } else {
-                        const gearIndex = command.gear === 'blue' ? 1 : 2;
-                        onDownload(gearIndex);
-                        console.log(`⬇️ Downloaded ${command.gear} gear (SVG)`);
-                    }
-                }
-                // Handle download_stl action
-                else if (command.action === 'download_stl' && command.gear) {
-                    if (command.gear === 'both') {
-                        onDownloadBothSTL();
-                        console.log('⬇️ Downloaded both gears together (STL)');
-                    } else {
-                        const gearIndex = command.gear === 'blue' ? 1 : 2;
-                        onDownloadSTL(gearIndex);
-                        console.log(`⬇️ Downloaded ${command.gear} gear (STL)`);
-                    }
-                }
-                // Handle set_speed action
-                else if (command.action === 'set_speed') {
-                    const requestedSpeed = typeof command.speed === 'number'
-                        ? command.speed
-                        : DEFAULT_ANIMATION_SPEED;
-                    const clampedSpeed = Math.min(
-                        Math.max(requestedSpeed, MIN_ANIMATION_SPEED),
-                        ABSOLUTE_MAX_ANIMATION_SPEED
-                    );
-
-                    if (clampedSpeed > SOFT_MAX_ANIMATION_SPEED) {
-                        console.warn(
-                            `⚠️ Requested speed ${requestedSpeed} exceeds soft cap ${SOFT_MAX_ANIMATION_SPEED}, applying hard cap ${ABSOLUTE_MAX_ANIMATION_SPEED}`
-                        );
-                    }
-
-                    setState(prev => ({ ...prev, speed: clampedSpeed }));
-                    console.log(`⚡ Speed set to ${clampedSpeed}`);
-                }
-                // Handle update_params action (only gear parameters, no speed)
-                else if (command.action === 'update_params' && command.params) {
-                    setState(prev => {
-                        const next = { ...prev };
-                        const p = command.params;
-
-                        // Helper function to validate and update gear params
-                        const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-                        const updateGear = (gear: typeof next.gear1, updates: any) => {
-                            if (!updates) return gear;
-
-                            const updated = { ...gear, ...updates };
-
-                            if (updates.toothCount !== undefined) {
-                                updated.toothCount = clamp(updates.toothCount, MIN_TOOTH_COUNT, MAX_TOOTH_COUNT);
+                try {
+                    await withToolTimeout(command.action, async () => {
+                        // Handle name_chat action
+                        if (command.action === 'name_chat' && command.chatName) {
+                            onChatNamed(command.chatName);
+                        }
+                        // Handle download_svg action
+                        else if (command.action === 'download_svg' && command.gear) {
+                            if (command.gear === 'both') {
+                                onDownloadBoth();
+                                console.log('⬇️ Downloaded both gears together (SVG)');
+                            } else {
+                                const gearIndex = command.gear === 'blue' ? 1 : 2;
+                                onDownload(gearIndex);
+                                console.log(`⬇️ Downloaded ${command.gear} gear (SVG)`);
                             }
-
-                            if (updates.module !== undefined) {
-                                updated.module = clamp(updates.module, MIN_MODULE, MAX_MODULE);
+                        }
+                        // Handle download_stl action
+                        else if (command.action === 'download_stl' && command.gear) {
+                            if (command.gear === 'both') {
+                                onDownloadBothSTL();
+                                console.log('⬇️ Downloaded both gears together (STL)');
+                            } else {
+                                const gearIndex = command.gear === 'blue' ? 1 : 2;
+                                onDownloadSTL(gearIndex);
+                                console.log(`⬇️ Downloaded ${command.gear} gear (STL)`);
                             }
+                        }
+                        // Handle set_speed action
+                        else if (command.action === 'set_speed') {
+                            const requestedSpeed = typeof command.speed === 'number'
+                                ? command.speed
+                                : DEFAULT_ANIMATION_SPEED;
+                            const clampedSpeed = Math.min(
+                                Math.max(requestedSpeed, MIN_ANIMATION_SPEED),
+                                ABSOLUTE_MAX_ANIMATION_SPEED
+                            );
 
-                            if (updates.centerHoleDiameter !== undefined) {
-                                updated.centerHoleDiameter = clamp(
-                                    updates.centerHoleDiameter,
-                                    MIN_CENTER_HOLE_DIAMETER,
-                                    MAX_CENTER_HOLE_DIAMETER
+                            if (clampedSpeed > SOFT_MAX_ANIMATION_SPEED) {
+                                console.warn(
+                                    `⚠️ Requested speed ${requestedSpeed} exceeds soft cap ${SOFT_MAX_ANIMATION_SPEED}, applying hard cap ${ABSOLUTE_MAX_ANIMATION_SPEED}`
                                 );
                             }
 
-                            // Default centerHoleDiameter if not set
-                            if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
-                                updated.centerHoleDiameter = 5; // mm - smaller default for laser cutting
-                            }
-
-                            return updated;
-                        };
-
-                        if (p.gear1) next.gear1 = updateGear(next.gear1, p.gear1);
-                        if (p.gear2) next.gear2 = updateGear(next.gear2, p.gear2);
-
-                        // Recalculate ratio if teeth changed
-                        if (p.gear1?.toothCount || p.gear2?.toothCount) {
-                            next.ratio = next.gear2.toothCount / next.gear1.toothCount;
+                            setState(prev => ({ ...prev, speed: clampedSpeed }));
+                            console.log(`⚡ Speed set to ${clampedSpeed}`);
                         }
+                        // Handle update_params action (only gear parameters, no speed)
+                        else if (command.action === 'update_params' && command.params) {
+                            setState(prev => {
+                                const next = { ...prev };
+                                const p = command.params;
 
-                        return next;
-                    });
-                }
-                // Handle get_params action (Show technical summary)
-                else if (command.action === 'get_params') {
-                    // Calculate derived metrics
-                    const getMetrics = (gear: typeof state.gear1) => {
-                        const pitchDiameter = gear.module * gear.toothCount;
-                        const addendum = gear.module * (1 + gear.profileShift);
-                        const outerDiameter = pitchDiameter + (2 * addendum);
-                        return { pitchDiameter, outerDiameter };
-                    };
+                                // Helper function to validate and update gear params
+                                const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+                                const updateGear = (gear: typeof next.gear1, updates: any) => {
+                                    if (!updates) return gear;
 
-                    const g1 = getMetrics(state.gear1);
-                    const g2 = getMetrics(state.gear2);
+                                    const updated = { ...gear, ...updates };
 
-                    const summary = `**⚙️ Technische Daten:**
+                                    if (updates.toothCount !== undefined) {
+                                        updated.toothCount = clamp(updates.toothCount, MIN_TOOTH_COUNT, MAX_TOOTH_COUNT);
+                                    }
+
+                                    if (updates.module !== undefined) {
+                                        updated.module = clamp(updates.module, MIN_MODULE, MAX_MODULE);
+                                    }
+
+                                    if (updates.centerHoleDiameter !== undefined) {
+                                        updated.centerHoleDiameter = clamp(
+                                            updates.centerHoleDiameter,
+                                            MIN_CENTER_HOLE_DIAMETER,
+                                            MAX_CENTER_HOLE_DIAMETER
+                                        );
+                                    }
+
+                                    // Default centerHoleDiameter if not set
+                                    if (updates.centerHoleDiameter === undefined && !gear.centerHoleDiameter) {
+                                        updated.centerHoleDiameter = 5; // mm - smaller default for laser cutting
+                                    }
+
+                                    return updated;
+                                };
+
+                                if (p.gear1) next.gear1 = updateGear(next.gear1, p.gear1);
+                                if (p.gear2) next.gear2 = updateGear(next.gear2, p.gear2);
+
+                                // Recalculate ratio if teeth changed
+                                if (p.gear1?.toothCount || p.gear2?.toothCount) {
+                                    next.ratio = next.gear2.toothCount / next.gear1.toothCount;
+                                }
+
+                                return next;
+                            });
+                        }
+                        // Handle get_params action (Show technical summary)
+                        else if (command.action === 'get_params') {
+                            // Calculate derived metrics
+                            const getMetrics = (gear: typeof state.gear1) => {
+                                const pitchDiameter = gear.module * gear.toothCount;
+                                const addendum = gear.module * (1 + gear.profileShift);
+                                const outerDiameter = pitchDiameter + (2 * addendum);
+                                return { pitchDiameter, outerDiameter };
+                            };
+
+                            const g1 = getMetrics(state.gear1);
+                            const g2 = getMetrics(state.gear2);
+
+                            const summary = `**⚙️ Technische Daten:**
 
 **Blaues Zahnrad (Antrieb):**
 • Zähne: ${state.gear1.toothCount}
@@ -315,7 +336,15 @@ const AIChat: React.FC<AIChatProps> = ({
 • Übersetzung: 1:${state.ratio.toFixed(2)}
 • Achsabstand: ${((g1.pitchDiameter + g2.pitchDiameter) / 2).toFixed(2)}mm`;
 
-                    onSendMessage(summary, 'model');
+                            onSendMessage(summary, 'model');
+                        }
+                    });
+                } catch (actionError) {
+                    console.error('⏱️ Tool call failed or timed out:', actionError);
+                    const errorMessage = actionError instanceof Error
+                        ? actionError.message
+                        : 'Unbekannter Fehler beim Tool-Aufruf.';
+                    onSendMessage(`Die Aktion "${command.action}" wurde abgebrochen: ${errorMessage}`, 'model', true);
                 }
 
                 // 3. Wait a bit before next action to simulate "agent loop"
