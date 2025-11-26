@@ -27,6 +27,8 @@ There are ALWAYS exactly two gears:
 
 You ALWAYS respond with a **JSON ARRAY** containing one or more action objects.
 
+For every user request, the array must include at least one object that delivers a user-facing reply (e.g., `"respond"` with `"message"`) so there is always feedback.
+
 Required field in each object:
 - `"action"`: one of `"download_svg"`, `"download_stl"`, `"update_params"`, `"set_speed"`, `"name_chat"`, `"respond"`.
 
