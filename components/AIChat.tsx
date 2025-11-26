@@ -52,11 +52,75 @@ const AIChat: React.FC<AIChatProps> = ({
     onDragStart,
     isDragging
 }) => {
+    const MAX_COMMANDS = 8;
+    const MAX_RESPONSE_CHARS = 20000;
+    const STREAM_TIMEOUT_MS = 30000;
+    const GENERIC_ERROR_MESSAGE = 'Es gab ein Problem, bitte warte einen Moment und versuche es dann noch einmal.';
+    const ALLOWED_ACTIONS = new Set([
+        'download_svg',
+        'download_stl',
+        'update_params',
+        'set_speed',
+        'name_chat',
+        'respond',
+        'get_params'
+    ]);
+
     const [chatInput, setChatInput] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [streamingMessage, setStreamingMessage] = useState('');
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
+
+    type ParsedCommand = {
+        action: string;
+        message?: string;
+        chatName?: string;
+        gear?: 'blue' | 'red' | 'both';
+        speed?: number | null;
+        params?: {
+            gear1?: Partial<typeof state.gear1>;
+            gear2?: Partial<typeof state.gear2>;
+        } | null;
+    };
+
+    const sanitizeCommands = (raw: string): ParsedCommand[] => {
+        let parsed: unknown;
+
+        try {
+            parsed = JSON.parse(raw);
+        } catch (e) {
+            throw new Error('KI-Antwort konnte nicht gelesen werden (kein gültiges JSON).');
+        }
+
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            throw new Error('KI-Antwort hatte kein gültiges Aktions-Array.');
+        }
+
+        const limitedCommands = parsed.slice(0, MAX_COMMANDS);
+
+        const validated = limitedCommands.map((command, index) => {
+            if (typeof command !== 'object' || command === null) {
+                throw new Error(`Aktion #${index + 1} ist ungültig.`);
+            }
+
+            const typed = command as ParsedCommand;
+
+            if (!typed.action || !ALLOWED_ACTIONS.has(typed.action)) {
+                throw new Error(`Aktion #${index + 1} hat einen unbekannten Typ.`);
+            }
+
+            if (typed.action === 'set_speed' && typed.speed !== null && typed.speed !== undefined) {
+                if (typeof typed.speed !== 'number' || Number.isNaN(typed.speed)) {
+                    throw new Error('Übermittelte Geschwindigkeit ist ungültig.');
+                }
+            }
+
+            return typed;
+        });
+
+        return validated;
+    };
 
     const handleAiSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,18 +136,45 @@ const AIChat: React.FC<AIChatProps> = ({
 
         try {
             let fullResponse = '';
+            let timedOut = false;
+            let timeoutId: number | undefined;
+
+            const resetTimeout = () => {
+                if (timeoutId) window.clearTimeout(timeoutId);
+                timeoutId = window.setTimeout(() => {
+                    timedOut = true;
+                }, STREAM_TIMEOUT_MS);
+            };
+
+            resetTimeout();
 
             // Stream the response (now guaranteed to be valid JSON)
             // Pass state only on first user message (when only welcome message exists)
             for await (const chunk of streamMessageToGemini(userMsg, messages, state)) {
+                if (timedOut) {
+                    throw new Error('Der KI-Stream hat zu lange gedauert.');
+                }
+
+                resetTimeout();
+
                 fullResponse += chunk;
+
+                if (fullResponse.length > MAX_RESPONSE_CHARS) {
+                    throw new Error('Die KI-Antwort war zu groß.');
+                }
+
                 setStreamingMessage(fullResponse);
+            }
+
+            if (timeoutId) window.clearTimeout(timeoutId);
+            if (timedOut) {
+                throw new Error('Der KI-Stream hat zu lange gedauert.');
             }
 
             console.log("🤖 AI Full Response:", fullResponse);
 
             // Parse the structured JSON response (guaranteed to be valid)
-            const commands = JSON.parse(fullResponse);
+            const commands = sanitizeCommands(fullResponse);
             console.log("✅ Parsed JSON:", commands);
             console.log(`📋 Processing ${commands.length} command(s)`);
 
@@ -125,8 +216,10 @@ const AIChat: React.FC<AIChatProps> = ({
                     }
                 }
                 // Handle set_speed action
-                else if (command.action === 'set_speed' && command.speed !== undefined) {
-                    const requestedSpeed = command.speed ?? DEFAULT_ANIMATION_SPEED;
+                else if (command.action === 'set_speed') {
+                    const requestedSpeed = typeof command.speed === 'number'
+                        ? command.speed
+                        : DEFAULT_ANIMATION_SPEED;
                     const clampedSpeed = Math.min(
                         Math.max(requestedSpeed, MIN_ANIMATION_SPEED),
                         ABSOLUTE_MAX_ANIMATION_SPEED
@@ -235,7 +328,7 @@ const AIChat: React.FC<AIChatProps> = ({
         } catch (error) {
             console.error("🔥 AI Service Error:", error);
             setStreamingMessage('');
-            onSendMessage('Es gab ein Problem, bitte warte einen Moment und versuche es dann noch einmal.', 'model', true);
+            onSendMessage(GENERIC_ERROR_MESSAGE, 'model', true);
         } finally {
             setIsAiLoading(false);
         }
