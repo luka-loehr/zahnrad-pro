@@ -57,6 +57,9 @@ const AIChat: React.FC<AIChatProps> = ({
     const STREAM_TIMEOUT_MS = 30000;
     const TOOL_CALL_TIMEOUT_MS = 5000;
     const GENERIC_ERROR_MESSAGE = 'Es gab ein Problem, bitte warte einen Moment und versuche es dann noch einmal.';
+    const RATE_LIMIT_WINDOW_MS = 60_000;
+    const RATE_LIMIT_MAX_MESSAGES = 10;
+    const RATE_LIMIT_ERROR_MESSAGE = 'Du schreibst ganz schön schnell – bitte warte einen Moment vor der nächsten Anfrage.';
     const ALLOWED_ACTIONS = new Set([
         'download_svg',
         'download_stl',
@@ -70,6 +73,7 @@ const AIChat: React.FC<AIChatProps> = ({
     const [chatInput, setChatInput] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [streamingMessage, setStreamingMessage] = useState('');
+    const [recentUserMessages, setRecentUserMessages] = useState<number[]>([]);
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -144,6 +148,16 @@ const AIChat: React.FC<AIChatProps> = ({
     const handleAiSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!chatInput.trim() || isAiLoading) return;
+
+        const now = Date.now();
+        const updatedTimestamps = recentUserMessages.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+
+        if (updatedTimestamps.length >= RATE_LIMIT_MAX_MESSAGES) {
+            onSendMessage(RATE_LIMIT_ERROR_MESSAGE, 'model', true);
+            return;
+        }
+
+        setRecentUserMessages([...updatedTimestamps, now]);
 
         const userMsg = chatInput;
         setChatInput('');
