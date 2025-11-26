@@ -194,7 +194,7 @@ Use:
 
 ## Werte & Grenzen
 
-- Animation: Minimum 1, Start 10, Standard-Maximum 100. Nur wenn der User explizit extrem schnell will, darfst du bis 1000 gehen.
+- Animation: Minimum 1, Start 10, Maximum 100.
 - Modul: 0.5mm bis 10mm.
 - Bohrung / Durchmesser: 1mm bis 100mm.
 - Zähne: Minimum 10, Maximum 200 (hartes Limit).
